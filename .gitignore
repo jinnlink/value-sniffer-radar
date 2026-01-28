@@ -1,0 +1,19 @@
+# Local configs / secrets
+config.yaml
+.env
+
+# Runtime state
+state/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# AI council runs (local artifacts)
+council-run/
+council/
+
+# Go build output
+*.exe
+*.out
+*.test

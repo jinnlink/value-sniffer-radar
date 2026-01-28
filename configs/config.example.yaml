@@ -1,0 +1,92 @@
+tushare:
+  base_url: "https://api.tushare.pro"
+  token_env: "TUSHARE_TOKEN"
+  timeout_seconds: 20
+
+engine:
+  interval_seconds: 60
+  trade_date_mode: "latest_open" # latest_open | fixed
+  fixed_trade_date: ""           # YYYYMMDD (when trade_date_mode=fixed)
+  max_api_retries: 3
+  dedupe_seconds: 3600           # default 3600; set -1 to disable
+  max_events_per_run: 50         # avoid flooding
+  action_max_events_per_run: 10
+  observe_max_events_per_run: 50
+  action_symbol_cooldown_seconds: 1800
+  observe_symbol_cooldown_seconds: 7200
+
+notifiers:
+  - type: "stdout"
+
+  # Paper log (JSONL) for later evaluation / backtest
+  # - type: "paper_log"
+  #   file_path: ".\\state\\paper.jsonl"
+
+  # AstrBot (AI-Value) file queue: write JSON into ai-value-core queue/ and let AstrBot push to QQ
+  # - type: "aival_queue"
+  #   queue_dir: 'E:\Program Files (x86)\bot\share\ai-value-core\queue'
+  #   market: "CN-A"
+  #   tags:
+  #     - "value-sniffer"
+
+  # Webhook: POST JSON to your service / bot
+  # - type: "webhook"
+  #   url: "http://127.0.0.1:12345/notify"
+  #   timeout_seconds: 10
+  #   headers:
+  #     Authorization: "Bearer xxx"
+
+  # Email via SMTP
+  # - type: "email"
+  #   smtp_host: "smtp.qq.com"
+  #   smtp_port: 465
+  #   username_env: "SMTP_USER"
+  #   password_env: "SMTP_PASS"
+  #   from: "you@example.com"
+  #   to:
+  #     - "you@example.com"
+  #   subject_prefix: "[ValueSniffer]"
+
+signals:
+  # High quality (ACTION): tighter thresholds, more frequent
+  - type: "cb_premium"
+    name: "cb_premium_action"
+    enabled: true
+    tier: "action"
+    min_interval_seconds: 60
+    min_amount: 20000000       # 成交额过滤(元)
+    premium_pct_low: -5.0      # 溢价率 <= 触发
+    premium_pct_high: 80.0     # 溢价率 >= 触发
+    top_n: 20                  # 每轮最多报警条数(按绝对偏离排序)
+
+  - type: "cb_double_low"
+    name: "cb_double_low_action"
+    enabled: true
+    tier: "action"
+    min_interval_seconds: 300
+    min_amount: 20000000       # 成交额过滤(元)
+    max_double_low: 125.0      # 价格 + 溢价率 <= 触发
+    top_n: 20
+
+  - type: "fund_premium"
+    name: "fund_premium_action"
+    enabled: true
+    tier: "action"
+    min_interval_seconds: 300
+    market: "E"                # 场内基金
+    pick_top_by_amount: 50     # 先按成交额挑，再逐只拉 NAV，减少调用量
+    min_amount: 30000000       # 成交额过滤(元)
+    premium_pct_low: -1.0
+    premium_pct_high: 3.0
+    top_n: 20
+
+  # Broad coverage (OBSERVE): looser thresholds, less frequent
+  - type: "cb_premium"
+    name: "cb_premium_observe"
+    enabled: true
+    tier: "observe"
+    min_interval_seconds: 900
+    min_amount: 10000000
+    premium_pct_low: -2.0
+    premium_pct_high: 50.0
+    top_n: 50
