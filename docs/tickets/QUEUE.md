@@ -1,11 +1,12 @@
 # Ticket Queue
 
 ## In Progress
-- Ticket VS_0004 (`docs/tickets/TICKET_VS_0004_PAPER_EVAL_BOM.md`): Fix paper_eval JSONL BOM compatibility (PowerShell UTF8)
+- Ticket VS_0005 (`docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md`): Add CN realtime marketdata adapter (repo first)
 
 ## Backlog
 
 ## Done
+- Ticket VS_0004 (`docs/tickets/TICKET_VS_0004_PAPER_EVAL_BOM.md`): Fix paper_eval JSONL BOM compatibility (PowerShell UTF8)
 - Ticket VS_0003 (`docs/tickets/TICKET_VS_0003_CN_REPO_SNIPER.md`): Add reverse repo (GC001/R-001) monitor (observe+action)
 - Ticket VS_0001 (`docs/tickets/TICKET_VS_0001_AUTOPILOT_PIPELINE.md`): Bootstrap industrial autopilot workflow
 - Ticket VS_0002 (`docs/tickets/TICKET_VS_0002_PAPER_EVAL.md`): Build paper evaluation tool (JSONL → metrics)
