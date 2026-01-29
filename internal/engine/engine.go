@@ -18,15 +18,15 @@ import (
 )
 
 type Engine struct {
-	cfg       *config.Config
-	client    *tushare.Client
-	md        marketdata.Fusion
-	notifiers []notifier.Notifier
-	sigs      []signals.Signal
-	sent      map[string]time.Time
+	cfg        *config.Config
+	client     *tushare.Client
+	md         marketdata.Fusion
+	notifiers  []notifier.Notifier
+	sigs       []signals.Signal
+	sent       map[string]time.Time
 	symbolLast map[string]time.Time
-	lastEval  map[string]time.Time
-	dailySent map[string]int
+	lastEval   map[string]time.Time
+	dailySent  map[string]int
 }
 
 func New(cfg *config.Config) (*Engine, error) {
@@ -60,15 +60,15 @@ func New(cfg *config.Config) (*Engine, error) {
 	}
 
 	return &Engine{
-		cfg:       cfg,
-		client:    client,
-		md:        md,
-		notifiers: notifs,
-		sigs:      sigs,
-		sent:      map[string]time.Time{},
+		cfg:        cfg,
+		client:     client,
+		md:         md,
+		notifiers:  notifs,
+		sigs:       sigs,
+		sent:       map[string]time.Time{},
 		symbolLast: map[string]time.Time{},
-		lastEval:  map[string]time.Time{},
-		dailySent: map[string]int{},
+		lastEval:   map[string]time.Time{},
+		dailySent:  map[string]int{},
 	}, nil
 }
 
@@ -124,6 +124,11 @@ func (e *Engine) runOnce(ctx context.Context) error {
 	allEvents, cdDropped := e.applySymbolCooldown(allEvents)
 	if cdDropped > 0 {
 		log.Printf("cooldown_dropped=%d (trade_date=%s)", cdDropped, tradeDate)
+	}
+
+	allEvents, downgraded := e.applyNetEdgePolicy(allEvents)
+	if downgraded > 0 {
+		log.Printf("net_edge_downgraded=%d (trade_date=%s)", downgraded, tradeDate)
 	}
 
 	allEvents, capDropped := e.applyMaxEventsPerRun(allEvents)
@@ -297,28 +302,54 @@ func (e *Engine) applyDailyCaps(events []notifier.Event, tradeDate string) ([]no
 
 	actionCap := e.cfg.Engine.ActionMaxEventsPerDay
 	observeCap := e.cfg.Engine.ObserveMaxEventsPerDay
+	perSignal := e.cfg.Engine.ActionMaxEventsPerSignalPerDay
 
 	out := make([]notifier.Event, 0, len(events))
 	droppedA := 0
 	droppedO := 0
 	for _, ev := range events {
 		tier := eventTier(ev)
-		key := tradeDate + "|" + tier
+
+		// If action budgets are exceeded, downgrade to observe (broad coverage) rather than dropping.
+		// This keeps coverage while still enforcing "action" quality/budget.
+		if tier == "action" {
+			if actionCap > 0 && e.dailySent[tradeDate+"|action"] >= actionCap {
+				ev = downgradeTier(ev, "daily_action_cap")
+				tier = "observe"
+			}
+			if tier == "action" && perSignal != nil {
+				if cap, ok := perSignal[ev.Source]; ok && cap > 0 {
+					keySig := tradeDate + "|action|" + ev.Source
+					if e.dailySent[keySig] >= cap {
+						ev = downgradeTier(ev, "per_signal_action_cap")
+						tier = "observe"
+					}
+				}
+			}
+		}
 
 		switch tier {
 		case "observe":
+			key := tradeDate + "|observe"
 			if observeCap > 0 && e.dailySent[key] >= observeCap {
 				droppedO++
 				continue
 			}
+			e.dailySent[key] = e.dailySent[key] + 1
 		default:
+			key := tradeDate + "|action"
 			if actionCap > 0 && e.dailySent[key] >= actionCap {
 				droppedA++
 				continue
 			}
+			e.dailySent[key] = e.dailySent[key] + 1
+			if perSignal != nil {
+				if cap, ok := perSignal[ev.Source]; ok && cap > 0 {
+					keySig := tradeDate + "|action|" + ev.Source
+					e.dailySent[keySig] = e.dailySent[keySig] + 1
+				}
+			}
 		}
-
-		e.dailySent[key] = e.dailySent[key] + 1
 		out = append(out, ev)
 	}
 	return out, droppedA, droppedO
@@ -337,6 +368,18 @@ func eventTier(e notifier.Event) string {
 		}
 	}
 	return "action"
+}
+
+func downgradeTier(e notifier.Event, reason string) notifier.Event {
+	if e.Tags == nil {
+		e.Tags = map[string]string{}
+	}
+	e.Tags["tier"] = "observe"
+	if e.Data == nil {
+		e.Data = map[string]interface{}{}
+	}
+	e.Data["policy_downgrade_reason"] = reason
+	return e
 }
 
 func eventKey(e notifier.Event) string {

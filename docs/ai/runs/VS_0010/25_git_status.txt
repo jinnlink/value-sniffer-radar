@@ -1,0 +1,23 @@
+﻿## main...origin/main
+ M configs/config.example.yaml
+ M internal/config/config.go
+ M internal/engine/engine.go
+ M internal/signals/cb_double_low.go
+ M internal/signals/cb_premium.go
+ M internal/signals/cn_repo_realtime.go
+ M internal/signals/cn_repo_sniper.go
+ M internal/signals/fund_premium.go
+?? docs/ai/runs/VS_0010/
+?? internal/engine/policy.go
+?? internal/engine/policy_test.go
+
+ configs/config.example.yaml          | 10 ++++
+ internal/config/config.go            | 89 ++++++++++++++++++++++++------------
+ internal/engine/engine.go            | 81 ++++++++++++++++++++++++--------
+ internal/signals/cb_double_low.go    | 30 ++++++------
+ internal/signals/cb_premium.go       | 32 ++++++++-----
+ internal/signals/cn_repo_realtime.go | 11 +++--
+ internal/signals/cn_repo_sniper.go   | 14 +++---
+ internal/signals/fund_premium.go     | 24 +++++++---
+ 8 files changed, 201 insertions(+), 90 deletions(-)
+

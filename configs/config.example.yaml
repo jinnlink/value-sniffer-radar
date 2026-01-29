@@ -39,6 +39,16 @@ engine:
   observe_symbol_cooldown_seconds: 7200
   action_max_events_per_day: 30
   observe_max_events_per_day: 200
+  # Quality gate (net-edge after estimated costs). Disabled by default (0).
+  action_net_edge_min_pct: 0.0
+  default_spread_pct: 0.0
+  default_slippage_pct: 0.05
+  default_fee_pct: 0.05
+  fee_pct_by_market:
+    "CN-A": 0.05
+  # Per-signal daily action quotas (optional; 0 means unlimited)
+  action_max_events_per_signal_per_day:
+    cn_repo_sniper_action: 10
 
 notifiers:
   - type: "stdout"

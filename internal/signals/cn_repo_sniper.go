@@ -164,12 +164,14 @@ func (s *CNRepoSniper) Evaluate(ctx context.Context, client *tushare.Client, tra
 				"tier":     s.tier,
 			},
 			Data: map[string]interface{}{
-				"rate_pct": a.ratePct,
-				"close":    a.close,
-				"weight":   a.weight,
-				"amount":   a.amount,
-				"vol":      a.vol,
-				"avg_amt":  a.avgAmt,
+				"rate_pct":            a.ratePct,
+				"threshold_yield_pct": s.minYieldPct,
+				"expected_edge_pct":   a.ratePct - s.minYieldPct,
+				"close":               a.close,
+				"weight":              a.weight,
+				"amount":              a.amount,
+				"vol":                 a.vol,
+				"avg_amt":             a.avgAmt,
 			},
 		})
 	}

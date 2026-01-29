@@ -14,8 +14,8 @@ import (
 )
 
 type CBPremium struct {
-	name       string
-	tier       string
+	name        string
+	tier        string
 	minInterval time.Duration
 	minAmount   float64
 	premiumLow  float64
@@ -166,6 +166,13 @@ func (s *CBPremium) Evaluate(ctx context.Context, client *tushare.Client, tradeD
 			"bond_close=%.2f\nstk=%s\nstk_close=%.2f\nconv_price=%.4f\nconv_value=%.2f\npremium=%.2f%%\namount=%.0f\n",
 			a.bondClose, a.stkCode, a.stkClose, a.convPrice, a.convValue, a.premiumPct, a.amount,
 		)
+		thr := s.premiumLow
+		side := "discount"
+		if a.premiumPct >= s.premiumHigh {
+			thr = s.premiumHigh
+			side = "premium"
+		}
+		expected := math.Abs(a.premiumPct - thr)
 		events = append(events, notifier.Event{
 			Source:    s.name,
 			TradeDate: tradeDate,
@@ -174,18 +181,21 @@ func (s *CBPremium) Evaluate(ctx context.Context, client *tushare.Client, tradeD
 			Title:     fmt.Sprintf("CB premium %.2f%% (%s)", a.premiumPct, a.tsCode),
 			Body:      body,
 			Tags: map[string]string{
-				"kind":      "cb",
+				"kind":       "cb",
 				"underlying": a.stkCode,
-				"tier":      s.tier,
+				"tier":       s.tier,
 			},
 			Data: map[string]interface{}{
-				"premium_pct": a.premiumPct,
-				"bond_close":  a.bondClose,
-				"stk_code":    a.stkCode,
-				"stk_close":   a.stkClose,
-				"conv_price":  a.convPrice,
-				"conv_value":  a.convValue,
-				"amount":      a.amount,
+				"premium_pct":           a.premiumPct,
+				"threshold_premium_pct": thr,
+				"expected_edge_pct":     expected,
+				"side":                  side,
+				"bond_close":            a.bondClose,
+				"stk_code":              a.stkCode,
+				"stk_close":             a.stkClose,
+				"conv_price":            a.convPrice,
+				"conv_value":            a.convValue,
+				"amount":                a.amount,
 			},
 		})
 	}

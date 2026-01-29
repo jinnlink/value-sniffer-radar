@@ -1,11 +1,13 @@
 # Ticket Queue
 
 ## In Progress
-- Ticket VS_0010 (`docs/tickets/TICKET_VS_0010_ACTION_BUDGET_POLICY.md`): Action budget + quality gate (target ~30 action/day)
+(none)
 
 ## Backlog
+- Ticket VS_0011 (`docs/tickets/TICKET_VS_0011_OPTIMIZER_TO_QUOTAS.md`): Use optimizer results to drive per-signal quotas + runtime scheduling
 
 ## Done
+- Ticket VS_0010 (`docs/tickets/TICKET_VS_0010_ACTION_BUDGET_POLICY.md`): Action budget + quality gate (target ~30 action/day)
 - Ticket VS_0009 (`docs/tickets/TICKET_VS_0009_OPTIMIZER_CONSUME_LABELS.md`): Optimizer consumes labels.repo.jsonl
 - Ticket VS_0008 (`docs/tickets/TICKET_VS_0008_REWARD_LABELING.md`): Add reward labeling (price windows + costs) for optimizer
 - Ticket VS_0006 (`docs/tickets/TICKET_VS_0006_OPTIMIZER.md`): Add online optimizer (bandit + dynamic polling + auto-threshold suggestions)

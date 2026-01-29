@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	Tushare    TushareConfig     `yaml:"tushare"`
-	Engine     EngineConfig      `yaml:"engine"`
-	Marketdata MarketdataConfig  `yaml:"marketdata"`
-	Notifiers  []NotifierConfig  `yaml:"notifiers"`
-	Signals    []SignalConfig    `yaml:"signals"`
+	Tushare    TushareConfig    `yaml:"tushare"`
+	Engine     EngineConfig     `yaml:"engine"`
+	Marketdata MarketdataConfig `yaml:"marketdata"`
+	Notifiers  []NotifierConfig `yaml:"notifiers"`
+	Signals    []SignalConfig   `yaml:"signals"`
 }
 
 type TushareConfig struct {
@@ -24,10 +24,10 @@ type TushareConfig struct {
 
 type EngineConfig struct {
 	IntervalSeconds int    `yaml:"interval_seconds"`
-	TradeDateMode   string `yaml:"trade_date_mode"`   // latest_open | fixed
-	FixedTradeDate  string `yaml:"fixed_trade_date"`  // YYYYMMDD
+	TradeDateMode   string `yaml:"trade_date_mode"`  // latest_open | fixed
+	FixedTradeDate  string `yaml:"fixed_trade_date"` // YYYYMMDD
 	MaxAPIRetries   int    `yaml:"max_api_retries"`
-	DedupeSeconds   int    `yaml:"dedupe_seconds"` // default 3600; set -1 to disable
+	DedupeSeconds   int    `yaml:"dedupe_seconds"`     // default 3600; set -1 to disable
 	MaxEventsPerRun int    `yaml:"max_events_per_run"` // default 50; 0 means no limit
 
 	// Tier controls: "action" (high quality) vs "observe" (broad coverage).
@@ -39,6 +39,22 @@ type EngineConfig struct {
 
 	ActionMaxEventsPerDay  int `yaml:"action_max_events_per_day"`  // default 30; 0 means unlimited
 	ObserveMaxEventsPerDay int `yaml:"observe_max_events_per_day"` // default 200; 0 means unlimited
+
+	// Action quality gate: net advantage after costs (pct points).
+	// If <=0, net-edge policy is disabled (backward compatible).
+	ActionNetEdgeMinPct float64 `yaml:"action_net_edge_min_pct"`
+
+	// Cost defaults (pct points). Individual signals can override by writing into event.data.
+	DefaultSpreadPct   float64            `yaml:"default_spread_pct"`
+	DefaultSlippagePct float64            `yaml:"default_slippage_pct"`
+	DefaultFeePct      float64            `yaml:"default_fee_pct"`
+	FeePctByMarket     map[string]float64 `yaml:"fee_pct_by_market"`
+
+	// Per-signal action budgets (daily).
+	// Example:
+	//   action_max_events_per_signal_per_day:
+	//     cn_repo_sniper_action: 10
+	ActionMaxEventsPerSignalPerDay map[string]int `yaml:"action_max_events_per_signal_per_day"`
 }
 
 type MarketdataConfig struct {
@@ -48,15 +64,15 @@ type MarketdataConfig struct {
 
 	// Fusion thresholds (defaults are conservative; tune via paper evaluation).
 	RequiredSources int     `yaml:"required_sources"` // default 2
-	MaxAbsDiff      float64 `yaml:"max_abs_diff"`      // default 0.05 (pct points)
-	StalenessSec    int     `yaml:"staleness_sec"`     // default 10
-	MinValid        float64 `yaml:"min_valid"`         // default 0
-	MaxValid        float64 `yaml:"max_valid"`         // default 20
+	MaxAbsDiff      float64 `yaml:"max_abs_diff"`     // default 0.05 (pct points)
+	StalenessSec    int     `yaml:"staleness_sec"`    // default 10
+	MinValid        float64 `yaml:"min_valid"`        // default 0
+	MaxValid        float64 `yaml:"max_valid"`        // default 20
 
 	// Circuit breaker
-	FailThreshold     int `yaml:"fail_threshold"`      // default 3
-	OutlierThreshold  int `yaml:"outlier_threshold"`   // default 3
-	CooldownSec       int `yaml:"cooldown_sec"`        // default 120
+	FailThreshold    int `yaml:"fail_threshold"`    // default 3
+	OutlierThreshold int `yaml:"outlier_threshold"` // default 3
+	CooldownSec      int `yaml:"cooldown_sec"`      // default 120
 
 	Providers []MarketdataProviderConfig `yaml:"providers"`
 }
@@ -66,12 +82,12 @@ type MarketdataProviderConfig struct {
 	Type string `yaml:"type"` // eastmoney_repo | tencent_repo
 
 	// eastmoney_repo
-	BaseURL    string  `yaml:"base_url"`
-	Fields     string  `yaml:"fields"`
+	BaseURL     string  `yaml:"base_url"`
+	Fields      string  `yaml:"fields"`
 	RateDivisor float64 `yaml:"rate_divisor"` // optional (default 1.0)
 
 	// tencent_repo
-	QuoteURL string  `yaml:"quote_url"`
+	QuoteURL string `yaml:"quote_url"`
 }
 
 type NotifierConfig struct {
@@ -101,11 +117,11 @@ type NotifierConfig struct {
 }
 
 type SignalConfig struct {
-	Type    string `yaml:"type"` // cb_premium | cb_double_low | fund_premium | cn_repo_sniper | cn_repo_realtime
-	Name    string `yaml:"name"` // instance name (optional). Allows multiple entries of same type.
-	Enabled bool   `yaml:"enabled"`
-	Tier    string `yaml:"tier"` // action | observe
-	MinIntervalSeconds int `yaml:"min_interval_seconds"` // 0 uses engine interval
+	Type               string `yaml:"type"` // cb_premium | cb_double_low | fund_premium | cn_repo_sniper | cn_repo_realtime
+	Name               string `yaml:"name"` // instance name (optional). Allows multiple entries of same type.
+	Enabled            bool   `yaml:"enabled"`
+	Tier               string `yaml:"tier"`                 // action | observe
+	MinIntervalSeconds int    `yaml:"min_interval_seconds"` // 0 uses engine interval
 
 	// shared
 	MinAmount float64 `yaml:"min_amount"`
@@ -120,14 +136,14 @@ type SignalConfig struct {
 	MaxDoubleLow float64 `yaml:"max_double_low"`
 
 	// fund_premium
-	Market           string `yaml:"market"`
-	PickTopByAmount  int    `yaml:"pick_top_by_amount"`
+	Market          string `yaml:"market"`
+	PickTopByAmount int    `yaml:"pick_top_by_amount"`
 
 	// cn_repo_sniper (reverse repo yield monitor)
-	RepoCodes   []string `yaml:"repo_codes"`   // e.g. ["204001.SH","131810.SZ"]
+	RepoCodes   []string `yaml:"repo_codes"`    // e.g. ["204001.SH","131810.SZ"]
 	MinYieldPct float64  `yaml:"min_yield_pct"` // threshold on weighted rate (%)
-	WindowStart string   `yaml:"window_start"` // "HH:MM" or "HHMM" (optional)
-	WindowEnd   string   `yaml:"window_end"`   // "HH:MM" or "HHMM" (optional)
+	WindowStart string   `yaml:"window_start"`  // "HH:MM" or "HHMM" (optional)
+	WindowEnd   string   `yaml:"window_end"`    // "HH:MM" or "HHMM" (optional)
 }
 
 func Load(path string) (*Config, error) {
@@ -202,6 +218,23 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
 	}
 	if c.Engine.ObserveMaxEventsPerDay == 0 {
 		c.Engine.ObserveMaxEventsPerDay = 200
+	}
+	if c.Engine.DefaultSpreadPct < 0 || c.Engine.DefaultSlippagePct < 0 || c.Engine.DefaultFeePct < 0 {
+		return errors.New("engine.default_spread_pct / default_slippage_pct / default_fee_pct must be >= 0")
+	}
+	if c.Engine.FeePctByMarket == nil {
+		c.Engine.FeePctByMarket = map[string]float64{}
+	}
+	if c.Engine.ActionMaxEventsPerSignalPerDay == nil {
+		c.Engine.ActionMaxEventsPerSignalPerDay = map[string]int{}
+	}
+	for k, v := range c.Engine.ActionMaxEventsPerSignalPerDay {
+		if v < 0 {
+			return errors.New("engine.action_max_events_per_signal_per_day values must be >= 0")
+		}
+		if k == "" {
+			delete(c.Engine.ActionMaxEventsPerSignalPerDay, k)
+		}
 	}
 
 	// marketdata defaults (optional)

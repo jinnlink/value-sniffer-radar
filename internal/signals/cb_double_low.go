@@ -15,9 +15,9 @@ import (
 // CBDoubleLow alerts when (bond_price + premium_pct) <= threshold.
 // It is NOT arbitrage; it's a classic low-risk-ish selection heuristic for CN convertible bonds.
 type CBDoubleLow struct {
-	name        string
-	tier        string
-	minInterval time.Duration
+	name         string
+	tier         string
+	minInterval  time.Duration
 	minAmount    float64
 	maxDoubleLow float64
 	topN         int
@@ -181,20 +181,22 @@ func (s *CBDoubleLow) Evaluate(ctx context.Context, client *tushare.Client, trad
 			Title:     fmt.Sprintf("CB double-low %.2f (%s)", a.doubleLow, a.tsCode),
 			Body:      body,
 			Tags: map[string]string{
-				"kind":      "cb",
-				"strategy":  "double_low",
+				"kind":       "cb",
+				"strategy":   "double_low",
 				"underlying": a.stkCode,
-				"tier":      s.tier,
+				"tier":       s.tier,
 			},
 			Data: map[string]interface{}{
-				"double_low":  a.doubleLow,
-				"premium_pct": a.premiumPct,
-				"bond_close":  a.bondClose,
-				"stk_code":    a.stkCode,
-				"stk_close":   a.stkClose,
-				"conv_price":  a.convPrice,
-				"conv_value":  a.convValue,
-				"amount":      a.amount,
+				"double_low":           a.doubleLow,
+				"threshold_double_low": s.maxDoubleLow,
+				"expected_edge_pct":    s.maxDoubleLow - a.doubleLow,
+				"premium_pct":          a.premiumPct,
+				"bond_close":           a.bondClose,
+				"stk_code":             a.stkCode,
+				"stk_close":            a.stkClose,
+				"conv_price":           a.convPrice,
+				"conv_value":           a.convValue,
+				"amount":               a.amount,
 			},
 		})
 	}

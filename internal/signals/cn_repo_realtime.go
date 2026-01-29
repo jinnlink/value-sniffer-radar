@@ -160,13 +160,14 @@ func (s *CNRepoRealtime) Evaluate(ctx context.Context, _ *tushare.Client, tradeD
 				"confidence": string(a.conf),
 			},
 			Data: map[string]any{
-				"consensus_rate_pct": a.ratePct,
-				"confidence":         string(a.conf),
-				"reason":             a.reason,
-				"providers":          a.providers,
+				"consensus_rate_pct":  a.ratePct,
+				"threshold_yield_pct": s.minYieldPct,
+				"expected_edge_pct":   a.ratePct - s.minYieldPct,
+				"confidence":          string(a.conf),
+				"reason":              a.reason,
+				"providers":           a.providers,
 			},
 		})
 	}
 	return events, nil
 }
-

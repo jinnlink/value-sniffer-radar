@@ -14,9 +14,9 @@ import (
 )
 
 type FundPremium struct {
-	name        string
-	tier        string
-	minInterval time.Duration
+	name            string
+	tier            string
+	minInterval     time.Duration
 	market          string
 	pickTopByAmount int
 	minAmount       float64
@@ -154,6 +154,13 @@ func (s *FundPremium) Evaluate(ctx context.Context, client *tushare.Client, trad
 	events := make([]notifier.Event, 0, len(alerts))
 	for _, a := range alerts {
 		body := fmt.Sprintf("close=%.4f\nnav=%.4f\npremium=%.2f%%\namount=%.0f\n", a.close, a.nav, a.premiumPct, a.amount)
+		thr := s.premiumLow
+		side := "discount"
+		if a.premiumPct >= s.premiumHigh {
+			thr = s.premiumHigh
+			side = "premium"
+		}
+		expected := math.Abs(a.premiumPct - thr)
 		events = append(events, notifier.Event{
 			Source:    s.name,
 			TradeDate: tradeDate,
@@ -166,10 +173,13 @@ func (s *FundPremium) Evaluate(ctx context.Context, client *tushare.Client, trad
 				"tier": s.tier,
 			},
 			Data: map[string]interface{}{
-				"premium_pct": a.premiumPct,
-				"close":       a.close,
-				"nav":         a.nav,
-				"amount":      a.amount,
+				"premium_pct":           a.premiumPct,
+				"threshold_premium_pct": thr,
+				"expected_edge_pct":     expected,
+				"side":                  side,
+				"close":                 a.close,
+				"nav":                   a.nav,
+				"amount":                a.amount,
 			},
 		})
 	}
