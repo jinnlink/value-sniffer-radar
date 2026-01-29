@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Tushare    TushareConfig     `yaml:"tushare"`
 	Engine     EngineConfig      `yaml:"engine"`
+	Marketdata MarketdataConfig  `yaml:"marketdata"`
 	Notifiers  []NotifierConfig  `yaml:"notifiers"`
 	Signals    []SignalConfig    `yaml:"signals"`
 }
@@ -40,6 +41,39 @@ type EngineConfig struct {
 	ObserveMaxEventsPerDay int `yaml:"observe_max_events_per_day"` // default 200; 0 means unlimited
 }
 
+type MarketdataConfig struct {
+	Enabled bool `yaml:"enabled"`
+
+	TimeoutMS int `yaml:"timeout_ms"` // per-provider timeout
+
+	// Fusion thresholds (defaults are conservative; tune via paper evaluation).
+	RequiredSources int     `yaml:"required_sources"` // default 2
+	MaxAbsDiff      float64 `yaml:"max_abs_diff"`      // default 0.05 (pct points)
+	StalenessSec    int     `yaml:"staleness_sec"`     // default 10
+	MinValid        float64 `yaml:"min_valid"`         // default 0
+	MaxValid        float64 `yaml:"max_valid"`         // default 20
+
+	// Circuit breaker
+	FailThreshold     int `yaml:"fail_threshold"`      // default 3
+	OutlierThreshold  int `yaml:"outlier_threshold"`   // default 3
+	CooldownSec       int `yaml:"cooldown_sec"`        // default 120
+
+	Providers []MarketdataProviderConfig `yaml:"providers"`
+}
+
+type MarketdataProviderConfig struct {
+	Name string `yaml:"name"`
+	Type string `yaml:"type"` // eastmoney_repo | tencent_repo
+
+	// eastmoney_repo
+	BaseURL    string  `yaml:"base_url"`
+	Fields     string  `yaml:"fields"`
+	RateDivisor float64 `yaml:"rate_divisor"` // optional (default 1.0)
+
+	// tencent_repo
+	QuoteURL string  `yaml:"quote_url"`
+}
+
 type NotifierConfig struct {
 	Type string `yaml:"type"` // stdout | email | webhook | aival_queue | paper_log
 
@@ -67,7 +101,7 @@ type NotifierConfig struct {
 }
 
 type SignalConfig struct {
-	Type    string `yaml:"type"` // cb_premium | cb_double_low | fund_premium | cn_repo_sniper
+	Type    string `yaml:"type"` // cb_premium | cb_double_low | fund_premium | cn_repo_sniper | cn_repo_realtime
 	Name    string `yaml:"name"` // instance name (optional). Allows multiple entries of same type.
 	Enabled bool   `yaml:"enabled"`
 	Tier    string `yaml:"tier"` // action | observe
@@ -76,6 +110,7 @@ type SignalConfig struct {
 	// shared
 	MinAmount float64 `yaml:"min_amount"`
 	TopN      int     `yaml:"top_n"`
+	ConfirmK  int     `yaml:"confirm_k"` // optional k-confirm for action triggers (default 1)
 
 	// cb_premium
 	PremiumPctLow  float64 `yaml:"premium_pct_low"`
@@ -168,6 +203,41 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
 	if c.Engine.ObserveMaxEventsPerDay == 0 {
 		c.Engine.ObserveMaxEventsPerDay = 200
 	}
+
+	// marketdata defaults (optional)
+	if c.Marketdata.TimeoutMS <= 0 {
+		c.Marketdata.TimeoutMS = 1500
+	}
+	if c.Marketdata.RequiredSources <= 0 {
+		c.Marketdata.RequiredSources = 2
+	}
+	if c.Marketdata.MaxAbsDiff <= 0 {
+		c.Marketdata.MaxAbsDiff = 0.05
+	}
+	if c.Marketdata.StalenessSec <= 0 {
+		c.Marketdata.StalenessSec = 10
+	}
+	if c.Marketdata.MinValid == 0 {
+		c.Marketdata.MinValid = 0
+	}
+	if c.Marketdata.MaxValid == 0 {
+		c.Marketdata.MaxValid = 20
+	}
+	if c.Marketdata.FailThreshold <= 0 {
+		c.Marketdata.FailThreshold = 3
+	}
+	if c.Marketdata.OutlierThreshold <= 0 {
+		c.Marketdata.OutlierThreshold = 3
+	}
+	if c.Marketdata.CooldownSec <= 0 {
+		c.Marketdata.CooldownSec = 120
+	}
+	for i := range c.Marketdata.Providers {
+		p := &c.Marketdata.Providers[i]
+		if p.RateDivisor == 0 {
+			p.RateDivisor = 1.0
+		}
+	}
 	if c.Engine.TradeDateMode != "latest_open" && c.Engine.TradeDateMode != "fixed" {
 		return errors.New("engine.trade_date_mode must be latest_open or fixed")
 	}
@@ -196,6 +266,12 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
 		}
 		if s.MinIntervalSeconds < 0 {
 			return errors.New("signals[].min_interval_seconds must be >= 0")
+		}
+		if s.ConfirmK < 0 {
+			return errors.New("signals[].confirm_k must be >= 0")
+		}
+		if s.ConfirmK == 0 {
+			s.ConfirmK = 1
 		}
 	}
 	return nil

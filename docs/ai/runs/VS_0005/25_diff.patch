@@ -1,0 +1,365 @@
+﻿diff --git a/configs/config.example.yaml b/configs/config.example.yaml
+index 60e5e24..aaa739f 100644
+--- a/configs/config.example.yaml
++++ b/configs/config.example.yaml
+@@ -3,6 +3,28 @@ tushare:
+   token_env: "TUSHARE_TOKEN"
+   timeout_seconds: 20
+ 
++# Realtime marketdata (cheap-first). Personal use only; keep polling conservative.
++marketdata:
++  enabled: false
++  timeout_ms: 1500
++  required_sources: 2
++  max_abs_diff: 0.05       # pct points (e.g. 0.05 means 0.05%)
++  staleness_sec: 10
++  min_valid: 0
++  max_valid: 20
++  fail_threshold: 3
++  outlier_threshold: 3
++  cooldown_sec: 120
++  providers:
++    - name: "eastmoney"
++      type: "eastmoney_repo"
++      base_url: "https://push2.eastmoney.com/api/qt/stock/get"
++      fields: "f43,f57,f58,f59"
++      rate_divisor: 1.0
++    - name: "tencent"
++      type: "tencent_repo"
++      quote_url: "https://qt.gtimg.cn/q="
++
+ engine:
+   interval_seconds: 60
+   trade_date_mode: "latest_open" # latest_open | fixed
+@@ -50,6 +72,35 @@ notifiers:
+   #   subject_prefix: "[ValueSniffer]"
+ 
+ signals:
++  # Realtime repo (requires marketdata.enabled=true + at least 2 providers)
++  - type: "cn_repo_realtime"
++    name: "cn_repo_realtime_action"
++    enabled: false
++    tier: "action"
++    min_interval_seconds: 3
++    repo_codes:
++      - "204001.SH"
++      - "131810.SZ"
++    min_yield_pct: 5.0
++    confirm_k: 1
++    window_start: "14:45"
++    window_end: "15:00"
++    top_n: 5
++
++  - type: "cn_repo_realtime"
++    name: "cn_repo_realtime_observe"
++    enabled: false
++    tier: "observe"
++    min_interval_seconds: 10
++    repo_codes:
++      - "204001.SH"
++      - "131810.SZ"
++    min_yield_pct: 3.5
++    confirm_k: 1
++    window_start: "09:30"
++    window_end: "15:00"
++    top_n: 10
++
+   # CN reverse repo yield monitor (cash management baseline)
+   - type: "cn_repo_sniper"
+     name: "cn_repo_sniper_action"
+diff --git a/docs/ai/runs/VS_0005/00_context.md b/docs/ai/runs/VS_0005/00_context.md
+index f96d41d..0456f1d 100644
+--- a/docs/ai/runs/VS_0005/00_context.md
++++ b/docs/ai/runs/VS_0005/00_context.md
+@@ -1,7 +1,7 @@
+ ﻿# VS_0005 00_context
+ 
+ ## Ticket
+-- Queue line: - Ticket VS_0005 (`docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md`): Add CN realtime marketdata adapter (repo first)
++- Queue line: - Ticket VS_0005 (`docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md`): Add CN realtime marketdata adapter (multi-source, repo first)
+ - Ticket doc: docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md
+ 
+ ## Do / Don't (scope guardrails)
+diff --git a/internal/config/config.go b/internal/config/config.go
+index b9a2fd3..92c7139 100644
+--- a/internal/config/config.go
++++ b/internal/config/config.go
+@@ -11,6 +11,7 @@ import (
+ type Config struct {
+ 	Tushare    TushareConfig     `yaml:"tushare"`
+ 	Engine     EngineConfig      `yaml:"engine"`
++	Marketdata MarketdataConfig  `yaml:"marketdata"`
+ 	Notifiers  []NotifierConfig  `yaml:"notifiers"`
+ 	Signals    []SignalConfig    `yaml:"signals"`
+ }
+@@ -40,6 +41,39 @@ type EngineConfig struct {
+ 	ObserveMaxEventsPerDay int `yaml:"observe_max_events_per_day"` // default 200; 0 means unlimited
+ }
+ 
++type MarketdataConfig struct {
++	Enabled bool `yaml:"enabled"`
++
++	TimeoutMS int `yaml:"timeout_ms"` // per-provider timeout
++
++	// Fusion thresholds (defaults are conservative; tune via paper evaluation).
++	RequiredSources int     `yaml:"required_sources"` // default 2
++	MaxAbsDiff      float64 `yaml:"max_abs_diff"`      // default 0.05 (pct points)
++	StalenessSec    int     `yaml:"staleness_sec"`     // default 10
++	MinValid        float64 `yaml:"min_valid"`         // default 0
++	MaxValid        float64 `yaml:"max_valid"`         // default 20
++
++	// Circuit breaker
++	FailThreshold     int `yaml:"fail_threshold"`      // default 3
++	OutlierThreshold  int `yaml:"outlier_threshold"`   // default 3
++	CooldownSec       int `yaml:"cooldown_sec"`        // default 120
++
++	Providers []MarketdataProviderConfig `yaml:"providers"`
++}
++
++type MarketdataProviderConfig struct {
++	Name string `yaml:"name"`
++	Type string `yaml:"type"` // eastmoney_repo | tencent_repo
++
++	// eastmoney_repo
++	BaseURL    string  `yaml:"base_url"`
++	Fields     string  `yaml:"fields"`
++	RateDivisor float64 `yaml:"rate_divisor"` // optional (default 1.0)
++
++	// tencent_repo
++	QuoteURL string  `yaml:"quote_url"`
++}
++
+ type NotifierConfig struct {
+ 	Type string `yaml:"type"` // stdout | email | webhook | aival_queue | paper_log
+ 
+@@ -67,7 +101,7 @@ type NotifierConfig struct {
+ }
+ 
+ type SignalConfig struct {
+-	Type    string `yaml:"type"` // cb_premium | cb_double_low | fund_premium | cn_repo_sniper
++	Type    string `yaml:"type"` // cb_premium | cb_double_low | fund_premium | cn_repo_sniper | cn_repo_realtime
+ 	Name    string `yaml:"name"` // instance name (optional). Allows multiple entries of same type.
+ 	Enabled bool   `yaml:"enabled"`
+ 	Tier    string `yaml:"tier"` // action | observe
+@@ -76,6 +110,7 @@ type SignalConfig struct {
+ 	// shared
+ 	MinAmount float64 `yaml:"min_amount"`
+ 	TopN      int     `yaml:"top_n"`
++	ConfirmK  int     `yaml:"confirm_k"` // optional k-confirm for action triggers (default 1)
+ 
+ 	// cb_premium
+ 	PremiumPctLow  float64 `yaml:"premium_pct_low"`
+@@ -168,6 +203,41 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
+ 	if c.Engine.ObserveMaxEventsPerDay == 0 {
+ 		c.Engine.ObserveMaxEventsPerDay = 200
+ 	}
++
++	// marketdata defaults (optional)
++	if c.Marketdata.TimeoutMS <= 0 {
++		c.Marketdata.TimeoutMS = 1500
++	}
++	if c.Marketdata.RequiredSources <= 0 {
++		c.Marketdata.RequiredSources = 2
++	}
++	if c.Marketdata.MaxAbsDiff <= 0 {
++		c.Marketdata.MaxAbsDiff = 0.05
++	}
++	if c.Marketdata.StalenessSec <= 0 {
++		c.Marketdata.StalenessSec = 10
++	}
++	if c.Marketdata.MinValid == 0 {
++		c.Marketdata.MinValid = 0
++	}
++	if c.Marketdata.MaxValid == 0 {
++		c.Marketdata.MaxValid = 20
++	}
++	if c.Marketdata.FailThreshold <= 0 {
++		c.Marketdata.FailThreshold = 3
++	}
++	if c.Marketdata.OutlierThreshold <= 0 {
++		c.Marketdata.OutlierThreshold = 3
++	}
++	if c.Marketdata.CooldownSec <= 0 {
++		c.Marketdata.CooldownSec = 120
++	}
++	for i := range c.Marketdata.Providers {
++		p := &c.Marketdata.Providers[i]
++		if p.RateDivisor == 0 {
++			p.RateDivisor = 1.0
++		}
++	}
+ 	if c.Engine.TradeDateMode != "latest_open" && c.Engine.TradeDateMode != "fixed" {
+ 		return errors.New("engine.trade_date_mode must be latest_open or fixed")
+ 	}
+@@ -197,6 +267,12 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
+ 		if s.MinIntervalSeconds < 0 {
+ 			return errors.New("signals[].min_interval_seconds must be >= 0")
+ 		}
++		if s.ConfirmK < 0 {
++			return errors.New("signals[].confirm_k must be >= 0")
++		}
++		if s.ConfirmK == 0 {
++			s.ConfirmK = 1
++		}
+ 	}
+ 	return nil
+ }
+diff --git a/internal/engine/engine.go b/internal/engine/engine.go
+index 408bf9d..b5d11d1 100644
+--- a/internal/engine/engine.go
++++ b/internal/engine/engine.go
+@@ -11,6 +11,7 @@ import (
+ 	"time"
+ 
+ 	"value-sniffer-radar/internal/config"
++	"value-sniffer-radar/internal/marketdata"
+ 	"value-sniffer-radar/internal/notifier"
+ 	"value-sniffer-radar/internal/signals"
+ 	"value-sniffer-radar/internal/tushare"
+@@ -19,6 +20,7 @@ import (
+ type Engine struct {
+ 	cfg       *config.Config
+ 	client    *tushare.Client
++	md        marketdata.Fusion
+ 	notifiers []notifier.Notifier
+ 	sigs      []signals.Signal
+ 	sent      map[string]time.Time
+@@ -50,9 +52,15 @@ func New(cfg *config.Config) (*Engine, error) {
+ 		return nil, err
+ 	}
+ 
++	md, err := marketdata.Build(cfg.Marketdata)
++	if err != nil {
++		return nil, err
++	}
++
+ 	return &Engine{
+ 		cfg:       cfg,
+ 		client:    client,
++		md:        md,
+ 		notifiers: notifs,
+ 		sigs:      sigs,
+ 		sent:      map[string]time.Time{},
+@@ -91,7 +99,7 @@ func (e *Engine) runOnce(ctx context.Context) error {
+ 			}
+ 			e.lastEval[sig.Name()] = now
+ 		}
+-		evs, err := sig.Evaluate(ctx, e.client, tradeDate)
++		evs, err := sig.Evaluate(ctx, e.client, tradeDate, e.md)
+ 		if err != nil {
+ 			log.Printf("signal %s error: %v", sig.Name(), err)
+ 			continue
+diff --git a/internal/signals/cb_double_low.go b/internal/signals/cb_double_low.go
+index fb5ea79..3e2bb7d 100644
+--- a/internal/signals/cb_double_low.go
++++ b/internal/signals/cb_double_low.go
+@@ -7,6 +7,7 @@ import (
+ 	"time"
+ 
+ 	"value-sniffer-radar/internal/config"
++	"value-sniffer-radar/internal/marketdata"
+ 	"value-sniffer-radar/internal/notifier"
+ 	"value-sniffer-radar/internal/tushare"
+ )
+@@ -73,7 +74,7 @@ type cbDLAlert struct {
+ 	amount     float64
+ }
+ 
+-func (s *CBDoubleLow) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string) ([]notifier.Event, error) {
++func (s *CBDoubleLow) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string, _ marketdata.Fusion) ([]notifier.Event, error) {
+ 	cbBasics, err := client.Query(ctx, "cb_basic", map[string]any{
+ 		"list_status": "L",
+ 	}, []string{"ts_code", "stk_code", "conv_price", "bond_short_name"})
+diff --git a/internal/signals/cb_premium.go b/internal/signals/cb_premium.go
+index 7d90fc9..8edf79b 100644
+--- a/internal/signals/cb_premium.go
++++ b/internal/signals/cb_premium.go
+@@ -8,6 +8,7 @@ import (
+ 	"time"
+ 
+ 	"value-sniffer-radar/internal/config"
++	"value-sniffer-radar/internal/marketdata"
+ 	"value-sniffer-radar/internal/notifier"
+ 	"value-sniffer-radar/internal/tushare"
+ )
+@@ -68,7 +69,7 @@ type cbAlert struct {
+ 	amount     float64
+ }
+ 
+-func (s *CBPremium) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string) ([]notifier.Event, error) {
++func (s *CBPremium) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string, _ marketdata.Fusion) ([]notifier.Event, error) {
+ 	cbBasics, err := client.Query(ctx, "cb_basic", map[string]any{
+ 		"list_status": "L",
+ 	}, []string{"ts_code", "stk_code", "conv_price"})
+diff --git a/internal/signals/cn_repo_sniper.go b/internal/signals/cn_repo_sniper.go
+index 34d6a43..d14e9b2 100644
+--- a/internal/signals/cn_repo_sniper.go
++++ b/internal/signals/cn_repo_sniper.go
+@@ -8,6 +8,7 @@ import (
+ 	"time"
+ 
+ 	"value-sniffer-radar/internal/config"
++	"value-sniffer-radar/internal/marketdata"
+ 	"value-sniffer-radar/internal/notifier"
+ 	"value-sniffer-radar/internal/tushare"
+ )
+@@ -86,7 +87,7 @@ type repoAlert struct {
+ 	amountHint string
+ }
+ 
+-func (s *CNRepoSniper) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string) ([]notifier.Event, error) {
++func (s *CNRepoSniper) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string, _ marketdata.Fusion) ([]notifier.Event, error) {
+ 	if !withinWindow(time.Now(), s.windowStart, s.windowEnd) {
+ 		return nil, nil
+ 	}
+diff --git a/internal/signals/fund_premium.go b/internal/signals/fund_premium.go
+index f6c4dcd..b3037df 100644
+--- a/internal/signals/fund_premium.go
++++ b/internal/signals/fund_premium.go
+@@ -8,6 +8,7 @@ import (
+ 	"time"
+ 
+ 	"value-sniffer-radar/internal/config"
++	"value-sniffer-radar/internal/marketdata"
+ 	"value-sniffer-radar/internal/notifier"
+ 	"value-sniffer-radar/internal/tushare"
+ )
+@@ -77,7 +78,7 @@ type fundAlert struct {
+ 	amount     float64
+ }
+ 
+-func (s *FundPremium) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string) ([]notifier.Event, error) {
++func (s *FundPremium) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string, _ marketdata.Fusion) ([]notifier.Event, error) {
+ 	// Step 1: pick top funds by amount to limit fund_nav calls.
+ 	params := map[string]any{
+ 		"trade_date": tradeDate,
+diff --git a/internal/signals/signal.go b/internal/signals/signal.go
+index a4dd4e4..4430638 100644
+--- a/internal/signals/signal.go
++++ b/internal/signals/signal.go
+@@ -6,6 +6,7 @@ import (
+ 	"time"
+ 
+ 	"value-sniffer-radar/internal/config"
++	"value-sniffer-radar/internal/marketdata"
+ 	"value-sniffer-radar/internal/notifier"
+ 	"value-sniffer-radar/internal/tushare"
+ )
+@@ -13,7 +14,7 @@ import (
+ type Signal interface {
+ 	Name() string
+ 	MinInterval() time.Duration
+-	Evaluate(ctx context.Context, client *tushare.Client, tradeDate string) ([]notifier.Event, error)
++	Evaluate(ctx context.Context, client *tushare.Client, tradeDate string, md marketdata.Fusion) ([]notifier.Event, error)
+ }
+ 
+ func BuildAll(cfgs []config.SignalConfig) ([]Signal, error) {
+@@ -31,6 +32,8 @@ func BuildAll(cfgs []config.SignalConfig) ([]Signal, error) {
+ 			out = append(out, NewFundPremium(c))
+ 		case "cn_repo_sniper":
+ 			out = append(out, NewCNRepoSniper(c))
++		case "cn_repo_realtime":
++			out = append(out, NewCNRepoRealtime(c))
+ 		default:
+ 			return nil, fmt.Errorf("unknown signal type: %s", c.Type)
+ 		}

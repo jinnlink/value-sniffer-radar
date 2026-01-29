@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"value-sniffer-radar/internal/config"
+	"value-sniffer-radar/internal/marketdata"
 	"value-sniffer-radar/internal/notifier"
 	"value-sniffer-radar/internal/tushare"
 )
@@ -77,7 +78,7 @@ type fundAlert struct {
 	amount     float64
 }
 
-func (s *FundPremium) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string) ([]notifier.Event, error) {
+func (s *FundPremium) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string, _ marketdata.Fusion) ([]notifier.Event, error) {
 	// Step 1: pick top funds by amount to limit fund_nav calls.
 	params := map[string]any{
 		"trade_date": tradeDate,

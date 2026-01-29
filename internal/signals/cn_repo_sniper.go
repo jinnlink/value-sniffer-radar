@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"value-sniffer-radar/internal/config"
+	"value-sniffer-radar/internal/marketdata"
 	"value-sniffer-radar/internal/notifier"
 	"value-sniffer-radar/internal/tushare"
 )
@@ -86,7 +87,7 @@ type repoAlert struct {
 	amountHint string
 }
 
-func (s *CNRepoSniper) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string) ([]notifier.Event, error) {
+func (s *CNRepoSniper) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string, _ marketdata.Fusion) ([]notifier.Event, error) {
 	if !withinWindow(time.Now(), s.windowStart, s.windowEnd) {
 		return nil, nil
 	}

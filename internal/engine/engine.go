@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"value-sniffer-radar/internal/config"
+	"value-sniffer-radar/internal/marketdata"
 	"value-sniffer-radar/internal/notifier"
 	"value-sniffer-radar/internal/signals"
 	"value-sniffer-radar/internal/tushare"
@@ -19,6 +20,7 @@ import (
 type Engine struct {
 	cfg       *config.Config
 	client    *tushare.Client
+	md        marketdata.Fusion
 	notifiers []notifier.Notifier
 	sigs      []signals.Signal
 	sent      map[string]time.Time
@@ -50,9 +52,15 @@ func New(cfg *config.Config) (*Engine, error) {
 		return nil, err
 	}
 
+	md, err := marketdata.Build(cfg.Marketdata)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Engine{
 		cfg:       cfg,
 		client:    client,
+		md:        md,
 		notifiers: notifs,
 		sigs:      sigs,
 		sent:      map[string]time.Time{},
@@ -91,7 +99,7 @@ func (e *Engine) runOnce(ctx context.Context) error {
 			}
 			e.lastEval[sig.Name()] = now
 		}
-		evs, err := sig.Evaluate(ctx, e.client, tradeDate)
+		evs, err := sig.Evaluate(ctx, e.client, tradeDate, e.md)
 		if err != nil {
 			log.Printf("signal %s error: %v", sig.Name(), err)
 			continue

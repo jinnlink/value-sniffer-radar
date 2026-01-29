@@ -1,0 +1,26 @@
+﻿On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   configs/config.example.yaml
+	modified:   docs/ai/runs/VS_0005/00_context.md
+	modified:   internal/config/config.go
+	modified:   internal/engine/engine.go
+	modified:   internal/signals/cb_double_low.go
+	modified:   internal/signals/cb_premium.go
+	modified:   internal/signals/cn_repo_sniper.go
+	modified:   internal/signals/fund_premium.go
+	modified:   internal/signals/signal.go
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	docs/ai/runs/VS_0005/20_builder.md
+	docs/ai/runs/VS_0005/30_reviewer.md
+	docs/ai/runs/VS_0005/40_runner.md
+	docs/ai/runs/VS_0005/50_conclusion.md
+	internal/marketdata/
+	internal/signals/cn_repo_realtime.go
+
+no changes added to commit (use "git add" and/or "git commit -a")

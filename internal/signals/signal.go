@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"value-sniffer-radar/internal/config"
+	"value-sniffer-radar/internal/marketdata"
 	"value-sniffer-radar/internal/notifier"
 	"value-sniffer-radar/internal/tushare"
 )
@@ -13,7 +14,7 @@ import (
 type Signal interface {
 	Name() string
 	MinInterval() time.Duration
-	Evaluate(ctx context.Context, client *tushare.Client, tradeDate string) ([]notifier.Event, error)
+	Evaluate(ctx context.Context, client *tushare.Client, tradeDate string, md marketdata.Fusion) ([]notifier.Event, error)
 }
 
 func BuildAll(cfgs []config.SignalConfig) ([]Signal, error) {
@@ -31,6 +32,8 @@ func BuildAll(cfgs []config.SignalConfig) ([]Signal, error) {
 			out = append(out, NewFundPremium(c))
 		case "cn_repo_sniper":
 			out = append(out, NewCNRepoSniper(c))
+		case "cn_repo_realtime":
+			out = append(out, NewCNRepoRealtime(c))
 		default:
 			return nil, fmt.Errorf("unknown signal type: %s", c.Type)
 		}

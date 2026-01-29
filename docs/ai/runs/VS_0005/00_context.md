@@ -1,7 +1,7 @@
 ﻿# VS_0005 00_context
 
 ## Ticket
-- Queue line: - Ticket VS_0005 (`docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md`): Add CN realtime marketdata adapter (repo first)
+- Queue line: - Ticket VS_0005 (`docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md`): Add CN realtime marketdata adapter (multi-source, repo first)
 - Ticket doc: docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md
 
 ## Do / Don't (scope guardrails)

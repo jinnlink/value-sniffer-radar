@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"value-sniffer-radar/internal/config"
+	"value-sniffer-radar/internal/marketdata"
 	"value-sniffer-radar/internal/notifier"
 	"value-sniffer-radar/internal/tushare"
 )
@@ -73,7 +74,7 @@ type cbDLAlert struct {
 	amount     float64
 }
 
-func (s *CBDoubleLow) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string) ([]notifier.Event, error) {
+func (s *CBDoubleLow) Evaluate(ctx context.Context, client *tushare.Client, tradeDate string, _ marketdata.Fusion) ([]notifier.Event, error) {
 	cbBasics, err := client.Query(ctx, "cb_basic", map[string]any{
 		"list_status": "L",
 	}, []string{"ts_code", "stk_code", "conv_price", "bond_short_name"})
