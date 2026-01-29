@@ -14,6 +14,8 @@ engine:
   observe_max_events_per_run: 50
   action_symbol_cooldown_seconds: 1800
   observe_symbol_cooldown_seconds: 7200
+  action_max_events_per_day: 30
+  observe_max_events_per_day: 200
 
 notifiers:
   - type: "stdout"

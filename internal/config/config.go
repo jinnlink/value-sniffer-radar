@@ -35,6 +35,9 @@ type EngineConfig struct {
 
 	ActionSymbolCooldownSeconds  int `yaml:"action_symbol_cooldown_seconds"`  // default 1800; set -1 to disable
 	ObserveSymbolCooldownSeconds int `yaml:"observe_symbol_cooldown_seconds"` // default 7200; set -1 to disable
+
+	ActionMaxEventsPerDay  int `yaml:"action_max_events_per_day"`  // default 30; 0 means unlimited
+	ObserveMaxEventsPerDay int `yaml:"observe_max_events_per_day"` // default 200; 0 means unlimited
 }
 
 type NotifierConfig struct {
@@ -149,6 +152,15 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
 		c.Engine.ObserveSymbolCooldownSeconds = 7200
 	} else if c.Engine.ObserveSymbolCooldownSeconds < -1 {
 		return errors.New("engine.observe_symbol_cooldown_seconds must be -1 (disable) or >= 0")
+	}
+	if c.Engine.ActionMaxEventsPerDay < 0 || c.Engine.ObserveMaxEventsPerDay < 0 {
+		return errors.New("engine.action_max_events_per_day / observe_max_events_per_day must be >= 0")
+	}
+	if c.Engine.ActionMaxEventsPerDay == 0 {
+		c.Engine.ActionMaxEventsPerDay = 30
+	}
+	if c.Engine.ObserveMaxEventsPerDay == 0 {
+		c.Engine.ObserveMaxEventsPerDay = 200
 	}
 	if c.Engine.TradeDateMode != "latest_open" && c.Engine.TradeDateMode != "fixed" {
 		return errors.New("engine.trade_date_mode must be latest_open or fixed")

@@ -24,6 +24,7 @@ type Engine struct {
 	sent      map[string]time.Time
 	symbolLast map[string]time.Time
 	lastEval  map[string]time.Time
+	dailySent map[string]int
 }
 
 func New(cfg *config.Config) (*Engine, error) {
@@ -57,6 +58,7 @@ func New(cfg *config.Config) (*Engine, error) {
 		sent:      map[string]time.Time{},
 		symbolLast: map[string]time.Time{},
 		lastEval:  map[string]time.Time{},
+		dailySent: map[string]int{},
 	}, nil
 }
 
@@ -117,6 +119,11 @@ func (e *Engine) runOnce(ctx context.Context) error {
 	allEvents, capDropped := e.applyMaxEventsPerRun(allEvents)
 	if capDropped > 0 {
 		log.Printf("cap_dropped=%d max_events_per_run=%d (trade_date=%s)", capDropped, e.cfg.Engine.MaxEventsPerRun, tradeDate)
+	}
+
+	allEvents, dayDroppedA, dayDroppedO := e.applyDailyCaps(allEvents, tradeDate)
+	if dayDroppedA > 0 || dayDroppedO > 0 {
+		log.Printf("daily_cap_dropped action=%d observe=%d (trade_date=%s)", dayDroppedA, dayDroppedO, tradeDate)
 	}
 
 	if len(allEvents) == 0 {
@@ -265,6 +272,43 @@ func (e *Engine) applyMaxEventsPerRun(events []notifier.Event) ([]notifier.Event
 		return out, dropped
 	}
 	return out[:max], dropped + (len(out) - max)
+}
+
+func (e *Engine) applyDailyCaps(events []notifier.Event, tradeDate string) ([]notifier.Event, int, int) {
+	// Keep only current trade_date keys.
+	for k := range e.dailySent {
+		if !strings.HasPrefix(k, tradeDate+"|") {
+			delete(e.dailySent, k)
+		}
+	}
+
+	actionCap := e.cfg.Engine.ActionMaxEventsPerDay
+	observeCap := e.cfg.Engine.ObserveMaxEventsPerDay
+
+	out := make([]notifier.Event, 0, len(events))
+	droppedA := 0
+	droppedO := 0
+	for _, ev := range events {
+		tier := eventTier(ev)
+		key := tradeDate + "|" + tier
+
+		switch tier {
+		case "observe":
+			if observeCap > 0 && e.dailySent[key] >= observeCap {
+				droppedO++
+				continue
+			}
+		default:
+			if actionCap > 0 && e.dailySent[key] >= actionCap {
+				droppedA++
+				continue
+			}
+		}
+
+		e.dailySent[key] = e.dailySent[key] + 1
+		out = append(out, ev)
+	}
+	return out, droppedA, droppedO
 }
 
 func eventTier(e notifier.Event) string {

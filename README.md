@@ -46,6 +46,7 @@ AstrBot 插件 `ai_value` 会轮询该目录并推送到你配置的 QQ targets�
 - `engine.dedupe_seconds`：内容级去重 TTL（默认 3600 秒）
 - `engine.action_symbol_cooldown_seconds` / `engine.observe_symbol_cooldown_seconds`
 - `engine.action_max_events_per_run` / `engine.observe_max_events_per_run`
+- `engine.action_max_events_per_day` / `engine.observe_max_events_per_day`
 - `signals[].min_interval_seconds`：单信号最小计算间隔（observe 慢扫、action 快扫）
 
 ## 评估（Paper）
