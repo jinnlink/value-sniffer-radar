@@ -1,0 +1,5 @@
+﻿README.md
+configs/config.example.yaml
+docs/tickets/TICKET_VS_0003_CN_REPO_SNIPER.md
+internal/config/config.go
+internal/signals/signal.go

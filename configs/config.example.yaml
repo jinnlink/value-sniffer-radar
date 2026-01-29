@@ -50,6 +50,33 @@ notifiers:
   #   subject_prefix: "[ValueSniffer]"
 
 signals:
+  # CN reverse repo yield monitor (cash management baseline)
+  - type: "cn_repo_sniper"
+    name: "cn_repo_sniper_action"
+    enabled: true
+    tier: "action"
+    min_interval_seconds: 60
+    repo_codes:
+      - "204001.SH"   # SH 1-day reverse repo (often referred as GC001)
+      - "131810.SZ"   # SZ 1-day reverse repo (R-001)
+    min_yield_pct: 5.0
+    window_start: "14:45"
+    window_end: "15:00"
+    top_n: 5
+
+  - type: "cn_repo_sniper"
+    name: "cn_repo_sniper_observe"
+    enabled: true
+    tier: "observe"
+    min_interval_seconds: 300
+    repo_codes:
+      - "204001.SH"
+      - "131810.SZ"
+    min_yield_pct: 3.5
+    window_start: "09:30"
+    window_end: "15:00"
+    top_n: 10
+
   # High quality (ACTION): tighter thresholds, more frequent
   - type: "cb_premium"
     name: "cb_premium_action"

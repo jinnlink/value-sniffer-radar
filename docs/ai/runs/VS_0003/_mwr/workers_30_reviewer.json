@@ -1,0 +1,7 @@
+﻿{
+    "name":  "VS_0003_reviewer",
+    "command":  "Set-Location \u0027F:\\文档修复\\new\u0027; powershell -NoProfile -ExecutionPolicy Bypass -File \u0027C:\\Users\\Administrator\\.codex\\skills\\codex-cli-bridge\\scripts\\run_codex.ps1\u0027 -PromptFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0003\\_mwr\\30_reviewer_prompt.txt\u0027 -OutFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0003\\30_reviewer.md\u0027",
+    "promptFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0003\\_mwr\\30_reviewer_prompt.txt",
+    "outFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0003\\30_reviewer.md",
+    "tty":  true
+}

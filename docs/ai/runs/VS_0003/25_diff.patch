@@ -1,0 +1,118 @@
+﻿diff --git a/README.md b/README.md
+index 9d10091..8e64265 100644
+--- a/README.md
++++ b/README.md
+@@ -6,6 +6,7 @@
+ - `cb_premium`：可转债价格 vs 转股价值（溢价率）极端报警
+ - `cb_double_low`：可转债“双低”（价格 + 溢价率）报警
+ - `fund_premium`：场内基金（ETF/LOF）价格 vs 基金净值（溢价率）极端报警
++- `cn_repo_sniper`：逆回购（204001/131810 等）利率（加权价）阈值报警（现金管理/利率雷达）
+ 
+ ## 广覆盖 + 高质量（同时跑）
+ 
+diff --git a/configs/config.example.yaml b/configs/config.example.yaml
+index ca1437a..60e5e24 100644
+--- a/configs/config.example.yaml
++++ b/configs/config.example.yaml
+@@ -50,6 +50,33 @@ notifiers:
+   #   subject_prefix: "[ValueSniffer]"
+ 
+ signals:
++  # CN reverse repo yield monitor (cash management baseline)
++  - type: "cn_repo_sniper"
++    name: "cn_repo_sniper_action"
++    enabled: true
++    tier: "action"
++    min_interval_seconds: 60
++    repo_codes:
++      - "204001.SH"   # SH 1-day reverse repo (often referred as GC001)
++      - "131810.SZ"   # SZ 1-day reverse repo (R-001)
++    min_yield_pct: 5.0
++    window_start: "14:45"
++    window_end: "15:00"
++    top_n: 5
++
++  - type: "cn_repo_sniper"
++    name: "cn_repo_sniper_observe"
++    enabled: true
++    tier: "observe"
++    min_interval_seconds: 300
++    repo_codes:
++      - "204001.SH"
++      - "131810.SZ"
++    min_yield_pct: 3.5
++    window_start: "09:30"
++    window_end: "15:00"
++    top_n: 10
++
+   # High quality (ACTION): tighter thresholds, more frequent
+   - type: "cb_premium"
+     name: "cb_premium_action"
+diff --git a/docs/tickets/TICKET_VS_0003_CN_REPO_SNIPER.md b/docs/tickets/TICKET_VS_0003_CN_REPO_SNIPER.md
+index 9b8ec48..5767bad 100644
+--- a/docs/tickets/TICKET_VS_0003_CN_REPO_SNIPER.md
++++ b/docs/tickets/TICKET_VS_0003_CN_REPO_SNIPER.md
+@@ -7,15 +7,19 @@ Add a monitor for reverse repo opportunities (cash management baseline), with ob
+ ## Scope (draft)
+ 
+ In scope:
+-- New signal type for CN reverse repos (e.g. `SH204001`, `SZ131810`) based on yield thresholds and time windows.
++- New signal type `cn_repo_sniper` for CN reverse repos (e.g. `204001.SH` / `131810.SZ`, also accepts `SH204001` / `SZ131810`) based on:
++  - weighted rate threshold (`min_yield_pct`, %)
++  - optional active window (`window_start` / `window_end`)
+ - Alerts via existing notifiers (stdout / aival_queue / paper_log).
+ 
+ Out of scope:
+ - Auto execution.
++- New realtime data sources (AkShare / websockets). This ticket is plumbing on Tushare `repo_daily` (日行情).
+ 
+ ## Acceptance (draft)
+ 
+-1) Config accepts a new signal entry type (e.g. `cn_repo_sniper`)
+-2) Running with a fixed trade date produces events when thresholds are forced low
+-3) Works with `tier=observe` and `tier=action` configs
+-
++1) Config accepts a new signal entry type: `signals[].type: "cn_repo_sniper"`
++2) `go test ./...` passes (includes unit tests for parsing/normalization)
++3) Running with a fixed trade date produces events when thresholds are forced low (requires:
++   - env `TUSHARE_TOKEN`
++   - Tushare access to `repo_daily`, which requires points)
+diff --git a/internal/config/config.go b/internal/config/config.go
+index 6fbd4bf..b9a2fd3 100644
+--- a/internal/config/config.go
++++ b/internal/config/config.go
+@@ -67,7 +67,7 @@ type NotifierConfig struct {
+ }
+ 
+ type SignalConfig struct {
+-	Type    string `yaml:"type"` // cb_premium | fund_premium
++	Type    string `yaml:"type"` // cb_premium | cb_double_low | fund_premium | cn_repo_sniper
+ 	Name    string `yaml:"name"` // instance name (optional). Allows multiple entries of same type.
+ 	Enabled bool   `yaml:"enabled"`
+ 	Tier    string `yaml:"tier"` // action | observe
+@@ -87,6 +87,12 @@ type SignalConfig struct {
+ 	// fund_premium
+ 	Market           string `yaml:"market"`
+ 	PickTopByAmount  int    `yaml:"pick_top_by_amount"`
++
++	// cn_repo_sniper (reverse repo yield monitor)
++	RepoCodes   []string `yaml:"repo_codes"`   // e.g. ["204001.SH","131810.SZ"]
++	MinYieldPct float64  `yaml:"min_yield_pct"` // threshold on weighted rate (%)
++	WindowStart string   `yaml:"window_start"` // "HH:MM" or "HHMM" (optional)
++	WindowEnd   string   `yaml:"window_end"`   // "HH:MM" or "HHMM" (optional)
+ }
+ 
+ func Load(path string) (*Config, error) {
+diff --git a/internal/signals/signal.go b/internal/signals/signal.go
+index 362cafe..a4dd4e4 100644
+--- a/internal/signals/signal.go
++++ b/internal/signals/signal.go
+@@ -29,6 +29,8 @@ func BuildAll(cfgs []config.SignalConfig) ([]Signal, error) {
+ 			out = append(out, NewCBDoubleLow(c))
+ 		case "fund_premium":
+ 			out = append(out, NewFundPremium(c))
++		case "cn_repo_sniper":
++			out = append(out, NewCNRepoSniper(c))
+ 		default:
+ 			return nil, fmt.Errorf("unknown signal type: %s", c.Type)
+ 		}

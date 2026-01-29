@@ -67,7 +67,7 @@ type NotifierConfig struct {
 }
 
 type SignalConfig struct {
-	Type    string `yaml:"type"` // cb_premium | fund_premium
+	Type    string `yaml:"type"` // cb_premium | cb_double_low | fund_premium | cn_repo_sniper
 	Name    string `yaml:"name"` // instance name (optional). Allows multiple entries of same type.
 	Enabled bool   `yaml:"enabled"`
 	Tier    string `yaml:"tier"` // action | observe
@@ -87,6 +87,12 @@ type SignalConfig struct {
 	// fund_premium
 	Market           string `yaml:"market"`
 	PickTopByAmount  int    `yaml:"pick_top_by_amount"`
+
+	// cn_repo_sniper (reverse repo yield monitor)
+	RepoCodes   []string `yaml:"repo_codes"`   // e.g. ["204001.SH","131810.SZ"]
+	MinYieldPct float64  `yaml:"min_yield_pct"` // threshold on weighted rate (%)
+	WindowStart string   `yaml:"window_start"` // "HH:MM" or "HHMM" (optional)
+	WindowEnd   string   `yaml:"window_end"`   // "HH:MM" or "HHMM" (optional)
 }
 
 func Load(path string) (*Config, error) {

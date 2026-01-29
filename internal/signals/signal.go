@@ -29,6 +29,8 @@ func BuildAll(cfgs []config.SignalConfig) ([]Signal, error) {
 			out = append(out, NewCBDoubleLow(c))
 		case "fund_premium":
 			out = append(out, NewFundPremium(c))
+		case "cn_repo_sniper":
+			out = append(out, NewCNRepoSniper(c))
 		default:
 			return nil, fmt.Errorf("unknown signal type: %s", c.Type)
 		}
