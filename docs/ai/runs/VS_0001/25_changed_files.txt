@@ -1,0 +1,11 @@
+﻿docs/ai/runs/VS_0001/_mwr/workers_10_spec_keeper.json
+docs/ai/runs/VS_0001/_mwr/workers_20_builder.json
+docs/ai/runs/VS_0001/_mwr/workers_30_reviewer.json
+docs/ai/runs/VS_0001/10_spec_keeper.md
+docs/ai/runs/VS_0001/20_builder.md
+docs/ai/runs/VS_0001/25_changed_files.txt
+docs/ai/runs/VS_0001/25_diff.patch
+docs/ai/runs/VS_0001/25_git_status.txt
+docs/ai/runs/VS_0001/30_reviewer.md
+docs/ai/runs/VS_0001/40_runner.md
+docs/ai/runs/VS_0001/50_conclusion.md
