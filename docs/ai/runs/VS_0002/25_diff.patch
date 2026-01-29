@@ -1,0 +1,575 @@
+﻿=== git status (porcelain) ===
+M  IMPL.md
+A  docs/ai/runs/VS_0002/00_context.md
+A  docs/ai/runs/VS_0002/10_spec_keeper.md
+A  docs/ai/runs/VS_0002/20_builder.md
+A  docs/ai/runs/VS_0002/25_changed_files.txt
+A  docs/ai/runs/VS_0002/25_diff.patch
+A  docs/ai/runs/VS_0002/25_git_status.txt
+A  docs/ai/runs/VS_0002/_mwr/10_spec_keeper_prompt.txt
+A  docs/ai/runs/VS_0002/_mwr/20_builder_prompt.txt
+A  docs/ai/runs/VS_0002/_mwr/30_reviewer_prompt.txt
+A  docs/ai/runs/VS_0002/_mwr/40_runner_prompt.txt
+A  docs/ai/runs/VS_0002/_mwr/workers_10_spec_keeper.json
+A  docs/ai/runs/VS_0002/_mwr/workers_20_builder.json
+A  docs/ai/runs/VS_0002/_mwr/workers_30_reviewer.json
+A  docs/ai/runs/VS_0002/_mwr/workers_40_runner.json
+A  tools/paper_eval.py
+
+=== git diff (unstaged) ===
+diff --git a/docs/ai/runs/VS_0002/25_changed_files.txt b/docs/ai/runs/VS_0002/25_changed_files.txt
+index 41691f9..792a7cb 100644
+--- a/docs/ai/runs/VS_0002/25_changed_files.txt
++++ b/docs/ai/runs/VS_0002/25_changed_files.txt
+@@ -1 +1,16 @@
+-﻿IMPL.md
++﻿docs/ai/runs/VS_0002/_mwr/10_spec_keeper_prompt.txt
++docs/ai/runs/VS_0002/_mwr/20_builder_prompt.txt
++docs/ai/runs/VS_0002/_mwr/30_reviewer_prompt.txt
++docs/ai/runs/VS_0002/_mwr/40_runner_prompt.txt
++docs/ai/runs/VS_0002/_mwr/workers_10_spec_keeper.json
++docs/ai/runs/VS_0002/_mwr/workers_20_builder.json
++docs/ai/runs/VS_0002/_mwr/workers_30_reviewer.json
++docs/ai/runs/VS_0002/_mwr/workers_40_runner.json
++docs/ai/runs/VS_0002/00_context.md
++docs/ai/runs/VS_0002/10_spec_keeper.md
++docs/ai/runs/VS_0002/20_builder.md
++docs/ai/runs/VS_0002/25_changed_files.txt
++docs/ai/runs/VS_0002/25_diff.patch
++docs/ai/runs/VS_0002/25_git_status.txt
++IMPL.md
++tools/paper_eval.py
+diff --git a/docs/ai/runs/VS_0002/25_git_status.txt b/docs/ai/runs/VS_0002/25_git_status.txt
+index 12e9b6f..49c5880 100644
+--- a/docs/ai/runs/VS_0002/25_git_status.txt
++++ b/docs/ai/runs/VS_0002/25_git_status.txt
+@@ -1,3 +1,16 @@
+-﻿ M IMPL.md
+-?? docs/ai/runs/VS_0002/
+-?? tools/
++﻿M  IMPL.md
++A  docs/ai/runs/VS_0002/00_context.md
++A  docs/ai/runs/VS_0002/10_spec_keeper.md
++A  docs/ai/runs/VS_0002/20_builder.md
++A  docs/ai/runs/VS_0002/25_changed_files.txt
++A  docs/ai/runs/VS_0002/25_diff.patch
++A  docs/ai/runs/VS_0002/25_git_status.txt
++A  docs/ai/runs/VS_0002/_mwr/10_spec_keeper_prompt.txt
++A  docs/ai/runs/VS_0002/_mwr/20_builder_prompt.txt
++A  docs/ai/runs/VS_0002/_mwr/30_reviewer_prompt.txt
++A  docs/ai/runs/VS_0002/_mwr/40_runner_prompt.txt
++A  docs/ai/runs/VS_0002/_mwr/workers_10_spec_keeper.json
++A  docs/ai/runs/VS_0002/_mwr/workers_20_builder.json
++A  docs/ai/runs/VS_0002/_mwr/workers_30_reviewer.json
++A  docs/ai/runs/VS_0002/_mwr/workers_40_runner.json
++A  tools/paper_eval.py
+
+=== git diff --staged ===
+diff --git a/IMPL.md b/IMPL.md
+index 0082772..b7db1b5 100644
+--- a/IMPL.md
++++ b/IMPL.md
+@@ -10,6 +10,10 @@
+ - Notifiers: `internal/notifier`
+ - Data: `internal/tushare` (history/slow data)
+ 
++### Offline tooling
++
++- Offline analysis tools under `tools/` may use **Python (stdlib-only)** when ticketed (e.g. paper log evaluation).
++
+ ## Non-negotiables
+ 
+ - Never commit secrets. Use env vars (e.g. `TUSHARE_TOKEN`).
+@@ -25,4 +29,3 @@
+ 
+ - Start with the smallest check that proves the ticket.
+ - If no tests exist yet, prefer adding minimal smoke checks or log-based validation.
+-
+diff --git a/docs/ai/runs/VS_0002/00_context.md b/docs/ai/runs/VS_0002/00_context.md
+new file mode 100644
+index 0000000..9baf74f
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/00_context.md
+@@ -0,0 +1,31 @@
++﻿# VS_0002 00_context
++
++## Ticket
++- Queue line: - Ticket VS_0002 (`docs/tickets/TICKET_VS_0002_PAPER_EVAL.md`): Build paper evaluation tool (JSONL → metrics)
++- Ticket doc: docs/tickets/TICKET_VS_0002_PAPER_EVAL.md
++
++## Do / Don't (scope guardrails)
++- Do:
++  - Add a stdlib-only Python tool under `tools/` to summarize `paper_log` JSONL.
++  - Keep outputs as stdout and optional Markdown file.
++- Don't:
++  - Add any third-party Python deps (`pip install`, `requirements.txt`).
++  - Fetch prices / network data.
++  - Modify Go engine code (`cmd/`, `internal/`).
++
++## Decision points (0-3)
++- none
++
++## Expected minimal changes
++- Files:
++  - `tools/paper_eval.py`
++  - `docs/ai/runs/VS_0002/*` (run artifacts)
++
++## Acceptance (3 steps, copy/paste)
++1. `Test-Path tools\\paper_eval.py`
++2. `python tools\\paper_eval.py --help`
++3. `@'{\"ts\":\"2026-01-29T00:00:00+08:00\",\"event\":{\"source\":\"cb_double_low_action\",\"trade_date\":\"20260128\",\"market\":\"CN-A\",\"symbol\":\"110000.SH\",\"title\":\"demo\",\"body\":\"\",\"tags\":{\"tier\":\"action\"}}}'@ | Set-Content -Encoding UTF8 .\\state\\paper.sample.jsonl; python tools\\paper_eval.py --in .\\state\\paper.sample.jsonl`
++
++## Rollback
++- Delete `tools/paper_eval.py`.
++
+diff --git a/docs/ai/runs/VS_0002/10_spec_keeper.md b/docs/ai/runs/VS_0002/10_spec_keeper.md
+new file mode 100644
+index 0000000..04cb9d9
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/10_spec_keeper.md
+@@ -0,0 +1,33 @@
++﻿I will read the necessary context files, ticket details, specifications, and the template to generate the Spec Keeper report.
++I will read `IMPL.md` to check for any language constraints or implementation conventions that might conflict with the ticket's "stdlib-only Python" requirement.
++I will generate the `10_spec_keeper.md` file with the assessment of the ticket, noting the minor conflict regarding the programming language and providing clear guardrails and acceptance criteria.
++# Spec Keeper: Ticket VS_0002
++
++## Pass/Fail
++**PASS.** Ticket is clear, scoped, and actionable; specific override for Python tools is acceptable.
++
++## Conflicts / Ambiguities
++1. **Language Convention**: `IMPL.md` specifies Go, but ticket requests Python.
++   - *Decision*: **Allow.** Offline analysis tools (`tools/`) may use Python (stdlib only) as requested, while the main engine remains Go.
++
++## Do / Don't (Scope Guardrails)
++- **Do**:
++  - Use **Python Standard Library only** (no `pip install`).
++  - Read JSONL from file/stdin.
++  - Output simple text summaries to stdout.
++- **Don't**:
++  - Add `requirements.txt` or external dependencies (e.g., `pandas`).
++  - Fetch network data (prices).
++  - Modify any Go code in `cmd/` or `internal/`.
++
++## Acceptance Reminders
++1. `Test-Path tools\paper_eval.py`
++2. `python tools\paper_eval.py --help`
++3. **Smoke Test**:
++   ```powershell
++   @'{"ts":"2026-01-29T00:00:00+08:00","event":{"source":"cb_double_low_action","trade_date":"20260128","market":"CN-A","symbol":"110000.SH","title":"demo","body":"","tags":{"tier":"action"}}}'@ | Set-Content -Encoding UTF8 .\state\paper.sample.jsonl
++   python tools\paper_eval.py --in .\state\paper.sample.jsonl
++   ```
++
++## Decision Points (0–3)
++- None.
+diff --git a/docs/ai/runs/VS_0002/20_builder.md b/docs/ai/runs/VS_0002/20_builder.md
+new file mode 100644
+index 0000000..a9e93f0
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/20_builder.md
+@@ -0,0 +1,23 @@
++# Builder Output
++
++## Impact
++
++- Adds a stdlib-only Python evaluator to summarize `paper_log` JSONL.
++- No changes to Go engine runtime, signals, or notifiers.
++
++## Files Changed
++
++- `tools/paper_eval.py`
++- `IMPL.md` (documented `tools/` Python allowance)
++- `docs/ai/runs/VS_0002/00_context.md` (filled placeholders)
++
++## Acceptance (3 steps)
++
++1. `Test-Path tools\\paper_eval.py`
++2. `python tools\\paper_eval.py --help`
++3. `@'{\"ts\":\"2026-01-29T00:00:00+08:00\",\"event\":{\"source\":\"cb_double_low_action\",\"trade_date\":\"20260128\",\"market\":\"CN-A\",\"symbol\":\"110000.SH\",\"title\":\"demo\",\"body\":\"\",\"tags\":{\"tier\":\"action\"}}}'@ | Set-Content -Encoding UTF8 .\\state\\paper.sample.jsonl; python tools\\paper_eval.py --in .\\state\\paper.sample.jsonl`
++
++## Rollback
++
++- Delete `tools/paper_eval.py` and revert `IMPL.md` if needed.
++
+diff --git a/docs/ai/runs/VS_0002/25_changed_files.txt b/docs/ai/runs/VS_0002/25_changed_files.txt
+new file mode 100644
+index 0000000..41691f9
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/25_changed_files.txt
+@@ -0,0 +1 @@
++﻿IMPL.md
+diff --git a/docs/ai/runs/VS_0002/25_diff.patch b/docs/ai/runs/VS_0002/25_diff.patch
+new file mode 100644
+index 0000000..d315c79
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/25_diff.patch
+@@ -0,0 +1,30 @@
++﻿=== git status (porcelain) ===
++ M IMPL.md
++?? docs/ai/runs/VS_0002/
++?? tools/
++
++=== git diff (unstaged) ===
++diff --git a/IMPL.md b/IMPL.md
++index 0082772..b7db1b5 100644
++--- a/IMPL.md
+++++ b/IMPL.md
++@@ -10,6 +10,10 @@
++ - Notifiers: `internal/notifier`
++ - Data: `internal/tushare` (history/slow data)
++ 
+++### Offline tooling
+++
+++- Offline analysis tools under `tools/` may use **Python (stdlib-only)** when ticketed (e.g. paper log evaluation).
+++
++ ## Non-negotiables
++ 
++ - Never commit secrets. Use env vars (e.g. `TUSHARE_TOKEN`).
++@@ -25,4 +29,3 @@
++ 
++ - Start with the smallest check that proves the ticket.
++ - If no tests exist yet, prefer adding minimal smoke checks or log-based validation.
++-
++
++=== git diff --staged ===
++
++
+diff --git a/docs/ai/runs/VS_0002/25_git_status.txt b/docs/ai/runs/VS_0002/25_git_status.txt
+new file mode 100644
+index 0000000..12e9b6f
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/25_git_status.txt
+@@ -0,0 +1,3 @@
++﻿ M IMPL.md
++?? docs/ai/runs/VS_0002/
++?? tools/
+diff --git a/docs/ai/runs/VS_0002/_mwr/10_spec_keeper_prompt.txt b/docs/ai/runs/VS_0002/_mwr/10_spec_keeper_prompt.txt
+new file mode 100644
+index 0000000..5d4f445
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/_mwr/10_spec_keeper_prompt.txt
+@@ -0,0 +1,22 @@
++﻿You are Spec Keeper (contract gate). You do not write code or run commands.
++
++Task: produce ONLY the Markdown body for: F:\文档修复\new\docs\\ai\\runs\VS_0002\10_spec_keeper.md
++
++Allowed reads:
++1) F:\文档修复\new\docs\\ai\\runs\VS_0002\00_context.md
++2) F:\文档修复\new\docs\\tickets\\QUEUE.md (only to confirm in-progress ticket)
++3) F:\文档修复\new\docs\tickets\TICKET_VS_0002_PAPER_EVAL.md
++4) F:\文档修复\new\SPEC.md (only relevant sections)
++Optional (if needed for decision precedence): F:\文档修复\new\CLAUDE.md
++Template to follow: F:\文档修复\new\docs\\ai\\templates\SPEC_KEEPER.md
++
++Must include (in your output):
++- Pass/fail (contract compliance) + 1-sentence reason
++- Conflicts/ambiguities (0-5) + recommended decisions
++- Do/Don't (scope guardrails)
++- Acceptance reminders (5-8 observable checks)
++- Decision points (0-3) for humans
++
++Constraints:
++- Keep under ~120 lines.
++- Do not paste long quotes; reference file paths + headings/keywords only.
+diff --git a/docs/ai/runs/VS_0002/_mwr/20_builder_prompt.txt b/docs/ai/runs/VS_0002/_mwr/20_builder_prompt.txt
+new file mode 100644
+index 0000000..bd6d61c
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/_mwr/20_builder_prompt.txt
+@@ -0,0 +1,24 @@
++﻿You are Builder (implementation). You write code and produce a delivery report.
++
++Task:
++1) Implement ONLY the current ticket VS_0002 (no scope creep).
++2) Produce: F:\文档修复\new\docs\\ai\\runs\VS_0002\20_builder.md (Markdown body).
++
++Allowed reads:
++1) F:\文档修复\new\docs\\ai\\runs\VS_0002\00_context.md
++2) F:\文档修复\new\docs\\ai\\runs\VS_0002\10_spec_keeper.md
++3) F:\文档修复\new\IMPL.md (implementation guidance)
++4) F:\文档修复\new\SPEC.md (contract for correctness)
++5) F:\文档修复\new\docs\tickets\TICKET_VS_0002_PAPER_EVAL.md
++Template to follow: F:\文档修复\new\docs\\ai\\templates\BUILDER.md
++
++Output requirements:
++- Impact assessment (module/DB/API/client)
++- Minimal file change list (explicit file paths)
++- Acceptance: 3 commands (copy/paste)
++- Rollback plan
++
++Hard prohibitions unless ticket explicitly says otherwise:
++- No drive-by refactor
++- No new large dependencies
++- No contract changes (SPEC.md)
+diff --git a/docs/ai/runs/VS_0002/_mwr/30_reviewer_prompt.txt b/docs/ai/runs/VS_0002/_mwr/30_reviewer_prompt.txt
+new file mode 100644
+index 0000000..1297746
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/_mwr/30_reviewer_prompt.txt
+@@ -0,0 +1,20 @@
++﻿You are Reviewer (contract+quality). You do not implement large refactors.
++
++Task: produce ONLY the Markdown body for: F:\文档修复\new\docs\\ai\\runs\VS_0002\30_reviewer.md
++
++Allowed reads:
++1) F:\文档修复\new\docs\\ai\\runs\VS_0002\20_builder.md
++2) Diff / changed files list:
++   - Prefer: F:\文档修复\new\docs\\ai\\runs\VS_0002\25_diff.patch and F:\文档修复\new\docs\\ai\\runs\VS_0002\25_changed_files.txt (generated via ai-autopilot-pipeline/scripts/collect_diff.ps1)
++3) F:\文档修复\new\SPEC.md
++4) F:\文档修复\new\docs\\process\\REVIEW_CHECKLIST.md
++Optional: F:\文档修复\new\IMPL.md
++Template to follow: F:\文档修复\new\docs\\ai\\templates\REVIEWER.md
++
++Must include:
++- Issues by severity (blocking/high/medium/low)
++- Missing tests / edge cases
++- Suggested fix order
++
++Constraints:
++- Keep it actionable; no speculative redesign.
+diff --git a/docs/ai/runs/VS_0002/_mwr/40_runner_prompt.txt b/docs/ai/runs/VS_0002/_mwr/40_runner_prompt.txt
+new file mode 100644
+index 0000000..663fdbb
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/_mwr/40_runner_prompt.txt
+@@ -0,0 +1,13 @@
++﻿You are Runner (verification). You ONLY run acceptance commands from F:\文档修复\new\docs\\ai\\runs\VS_0002\20_builder.md and record raw output.
++
++Task: produce ONLY the Markdown body for: F:\文档修复\new\docs\\ai\\runs\VS_0002\40_runner.md
++
++Allowed actions:
++- Run the 3 acceptance commands from F:\文档修复\new\docs\\ai\\runs\VS_0002\20_builder.md (and only those).
++
++Must include:
++- Environment info (OS, pwd, key versions)
++- Step 1/2/3 command + raw output
++- If blocked (sandbox/permissions): record the error output and exact repro steps
++
++Template to follow: F:\文档修复\new\docs\\ai\\templates\RUNNER.md
+diff --git a/docs/ai/runs/VS_0002/_mwr/workers_10_spec_keeper.json b/docs/ai/runs/VS_0002/_mwr/workers_10_spec_keeper.json
+new file mode 100644
+index 0000000..4d22bbd
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/_mwr/workers_10_spec_keeper.json
+@@ -0,0 +1,7 @@
++﻿{
++    "name":  "VS_0002_spec_keeper",
++    "command":  "Set-Location \u0027F:\\文档修复\\new\u0027; powershell -NoProfile -ExecutionPolicy Bypass -File \u0027C:\\Users\\Administrator\\.codex\\skills\\gemini-cli-bridge\\scripts\\run_gemini.ps1\u0027 -PromptFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\_mwr\\10_spec_keeper_prompt.txt\u0027 -OutFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\10_spec_keeper.md\u0027",
++    "promptFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\_mwr\\10_spec_keeper_prompt.txt",
++    "outFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\10_spec_keeper.md",
++    "tty":  true
++}
+diff --git a/docs/ai/runs/VS_0002/_mwr/workers_20_builder.json b/docs/ai/runs/VS_0002/_mwr/workers_20_builder.json
+new file mode 100644
+index 0000000..b53ebab
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/_mwr/workers_20_builder.json
+@@ -0,0 +1,7 @@
++﻿{
++    "name":  "VS_0002_builder",
++    "command":  "Set-Location \u0027F:\\文档修复\\new\u0027; powershell -NoProfile -ExecutionPolicy Bypass -File \u0027C:\\Users\\Administrator\\.codex\\skills\\gemini-cli-bridge\\scripts\\run_gemini.ps1\u0027 -PromptFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\_mwr\\20_builder_prompt.txt\u0027 -OutFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\20_builder.md\u0027",
++    "promptFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\_mwr\\20_builder_prompt.txt",
++    "outFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\20_builder.md",
++    "tty":  true
++}
+diff --git a/docs/ai/runs/VS_0002/_mwr/workers_30_reviewer.json b/docs/ai/runs/VS_0002/_mwr/workers_30_reviewer.json
+new file mode 100644
+index 0000000..1d6b205
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/_mwr/workers_30_reviewer.json
+@@ -0,0 +1,7 @@
++﻿{
++    "name":  "VS_0002_reviewer",
++    "command":  "Set-Location \u0027F:\\文档修复\\new\u0027; powershell -NoProfile -ExecutionPolicy Bypass -File \u0027C:\\Users\\Administrator\\.codex\\skills\\gemini-cli-bridge\\scripts\\run_gemini.ps1\u0027 -PromptFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\_mwr\\30_reviewer_prompt.txt\u0027 -OutFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\30_reviewer.md\u0027",
++    "promptFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\_mwr\\30_reviewer_prompt.txt",
++    "outFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\30_reviewer.md",
++    "tty":  true
++}
+diff --git a/docs/ai/runs/VS_0002/_mwr/workers_40_runner.json b/docs/ai/runs/VS_0002/_mwr/workers_40_runner.json
+new file mode 100644
+index 0000000..51d0802
+--- /dev/null
++++ b/docs/ai/runs/VS_0002/_mwr/workers_40_runner.json
+@@ -0,0 +1,7 @@
++﻿{
++    "name":  "VS_0002_runner",
++    "command":  "Set-Location \u0027F:\\文档修复\\new\u0027; powershell -NoProfile -ExecutionPolicy Bypass -File \u0027C:\\Users\\Administrator\\.codex\\skills\\codex-cli-bridge\\scripts\\run_codex.ps1\u0027 -PromptFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\_mwr\\40_runner_prompt.txt\u0027 -OutFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\40_runner.md\u0027",
++    "promptFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\_mwr\\40_runner_prompt.txt",
++    "outFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0002\\40_runner.md",
++    "tty":  true
++}
+diff --git a/tools/paper_eval.py b/tools/paper_eval.py
+new file mode 100644
+index 0000000..df2988b
+--- /dev/null
++++ b/tools/paper_eval.py
+@@ -0,0 +1,169 @@
++#!/usr/bin/env python3
++"""
++VS_0002: Paper Evaluation Tool (stdlib-only)
++
++Input:
++- JSONL produced by the `paper_log` notifier:
++  {"ts":"...","event":{...}}
++
++Output:
++- Human-readable summary to stdout
++- Optional Markdown report
++"""
++
++from __future__ import annotations
++
++import argparse
++import json
++import sys
++from collections import Counter
++from datetime import datetime
++from pathlib import Path
++from typing import Any, Iterable, TextIO
++
++
++def iter_jsonl(fp: TextIO) -> Iterable[dict[str, Any]]:
++    for line_no, raw in enumerate(fp, 1):
++        s = raw.strip()
++        if not s:
++            continue
++        try:
++            obj = json.loads(s)
++        except json.JSONDecodeError:
++            print(f"[warn] invalid json line={line_no}", file=sys.stderr)
++            continue
++        if isinstance(obj, dict):
++            yield obj
++        else:
++            print(f"[warn] non-object json line={line_no}", file=sys.stderr)
++
++
++def coerce_event(row: dict[str, Any]) -> dict[str, Any] | None:
++    # paper_log format: {"ts": "...", "event": {...}}
++    ev = row.get("event")
++    if isinstance(ev, dict):
++        return ev
++    # tolerate raw events (future-proof)
++    if "source" in row and "title" in row and "trade_date" in row:
++        return row
++    return None
++
++
++def render_markdown(
++    *,
++    generated_at: str,
++    input_path: str,
++    total: int,
++    tier_counts: Counter[str],
++    source_counts: Counter[str],
++    symbol_counts: Counter[str],
++    trade_date_counts: Counter[str],
++) -> str:
++    def table(counter: Counter[str], top: int = 20) -> str:
++        rows = counter.most_common(top)
++        if not rows:
++            return "_(none)_\n"
++        lines = ["| key | count |", "|---|---:|"]
++        for k, v in rows:
++            lines.append(f"| {k} | {v} |")
++        return "\n".join(lines) + "\n"
++
++    parts = [
++        "# Paper Eval Report",
++        "",
++        f"- generated_at: `{generated_at}`",
++        f"- input: `{input_path}`",
++        f"- total_events: `{total}`",
++        "",
++        "## By Tier",
++        table(tier_counts, top=20),
++        "## By Signal (source)",
++        table(source_counts, top=30),
++        "## Top Symbols",
++        table(symbol_counts, top=30),
++        "## By Trade Date",
++        table(trade_date_counts, top=30),
++        "",
++        "## Notes",
++        "- This ticket does **not** fetch prices; PnL/returns require a separate data-source ticket.",
++        "",
++    ]
++    return "\n".join(parts)
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(description="Value Sniffer Radar - paper_log evaluator (stdlib-only)")
++    ap.add_argument("--in", dest="in_path", required=True, help="Input JSONL path (paper_log). Use '-' for stdin.")
++    ap.add_argument("--out-md", dest="out_md", default="", help="Optional Markdown report output path.")
++    args = ap.parse_args()
++
++    in_path = args.in_path.strip()
++    if in_path == "-":
++        fp = sys.stdin
++        input_label = "<stdin>"
++        rows = list(iter_jsonl(fp))
++    else:
++        p = Path(in_path)
++        if not p.exists():
++            print(f"[error] not found: {p}", file=sys.stderr)
++            return 2
++        input_label = str(p)
++        with p.open("r", encoding="utf-8") as fp:
++            rows = list(iter_jsonl(fp))
++
++    tier_counts: Counter[str] = Counter()
++    source_counts: Counter[str] = Counter()
++    symbol_counts: Counter[str] = Counter()
++    trade_date_counts: Counter[str] = Counter()
++
++    total = 0
++    for row in rows:
++        ev = coerce_event(row)
++        if not ev:
++            continue
++        total += 1
++
++        src = str(ev.get("source", "") or "").strip() or "unknown"
++        source_counts[src] += 1
++
++        sym = str(ev.get("symbol", "") or "").strip() or "unknown"
++        symbol_counts[sym] += 1
++
++        td = str(ev.get("trade_date", "") or "").strip() or "unknown"
++        trade_date_counts[td] += 1
++
++        tags = ev.get("tags")
++        tier = "action"
++        if isinstance(tags, dict):
++            t = str(tags.get("tier", "") or "").strip().lower()
++            if t in {"action", "observe"}:
++                tier = t
++        tier_counts[tier] += 1
++
++    generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
++    md = render_markdown(
++        generated_at=generated_at,
++        input_path=input_label,
++        total=total,
++        tier_counts=tier_counts,
++        source_counts=source_counts,
++        symbol_counts=symbol_counts,
++        trade_date_counts=trade_date_counts,
++    )
++
++    # stdout summary
++    print(md)
++
++    out_md = args.out_md.strip()
++    if out_md:
++        out_path = Path(out_md)
++        out_path.parent.mkdir(parents=True, exist_ok=True)
++        out_path.write_text(md, encoding="utf-8")
++        print(f"[ok] wrote: {out_path}", file=sys.stderr)
++
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
++
+

@@ -1,0 +1,16 @@
+﻿M  IMPL.md
+A  docs/ai/runs/VS_0002/00_context.md
+A  docs/ai/runs/VS_0002/10_spec_keeper.md
+A  docs/ai/runs/VS_0002/20_builder.md
+A  docs/ai/runs/VS_0002/25_changed_files.txt
+A  docs/ai/runs/VS_0002/25_diff.patch
+A  docs/ai/runs/VS_0002/25_git_status.txt
+A  docs/ai/runs/VS_0002/_mwr/10_spec_keeper_prompt.txt
+A  docs/ai/runs/VS_0002/_mwr/20_builder_prompt.txt
+A  docs/ai/runs/VS_0002/_mwr/30_reviewer_prompt.txt
+A  docs/ai/runs/VS_0002/_mwr/40_runner_prompt.txt
+A  docs/ai/runs/VS_0002/_mwr/workers_10_spec_keeper.json
+A  docs/ai/runs/VS_0002/_mwr/workers_20_builder.json
+A  docs/ai/runs/VS_0002/_mwr/workers_30_reviewer.json
+A  docs/ai/runs/VS_0002/_mwr/workers_40_runner.json
+A  tools/paper_eval.py

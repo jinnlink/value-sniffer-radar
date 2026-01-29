@@ -10,6 +10,10 @@
 - Notifiers: `internal/notifier`
 - Data: `internal/tushare` (history/slow data)
 
+### Offline tooling
+
+- Offline analysis tools under `tools/` may use **Python (stdlib-only)** when ticketed (e.g. paper log evaluation).
+
 ## Non-negotiables
 
 - Never commit secrets. Use env vars (e.g. `TUSHARE_TOKEN`).
@@ -25,4 +29,3 @@
 
 - Start with the smallest check that proves the ticket.
 - If no tests exist yet, prefer adding minimal smoke checks or log-based validation.
-
