@@ -1,11 +1,12 @@
 # Ticket Queue
 
 ## In Progress
-- Ticket VS_0006 (`docs/tickets/TICKET_VS_0006_OPTIMIZER.md`): Add online optimizer (bandit + dynamic polling + auto-threshold suggestions)
+- Ticket VS_0008 (`docs/tickets/TICKET_VS_0008_REWARD_LABELING.md`): Add reward labeling (price windows + costs) for optimizer
 
 ## Backlog
 
 ## Done
+- Ticket VS_0006 (`docs/tickets/TICKET_VS_0006_OPTIMIZER.md`): Add online optimizer (bandit + dynamic polling + auto-threshold suggestions)
 - Ticket VS_0007 (`docs/tickets/TICKET_VS_0007_RUNTIME_TWEAKS.md`): Realtime-only run without Tushare token + repo divisor default
 - Ticket VS_0005 (`docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md`): Add CN realtime marketdata adapter (multi-source, repo first)
 - Ticket VS_0004 (`docs/tickets/TICKET_VS_0004_PAPER_EVAL_BOM.md`): Fix paper_eval JSONL BOM compatibility (PowerShell UTF8)
