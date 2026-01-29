@@ -25,6 +25,8 @@ from typing import Any, Iterable, TextIO
 def iter_jsonl(fp: TextIO) -> Iterable[dict[str, Any]]:
     for line_no, raw in enumerate(fp, 1):
         s = raw.strip()
+        # PowerShell 5.1 `Set-Content -Encoding UTF8` writes BOM by default; strip it for JSON parsing.
+        s = s.lstrip("\ufeff")
         if not s:
             continue
         try:
@@ -108,7 +110,8 @@ def main() -> int:
             print(f"[error] not found: {p}", file=sys.stderr)
             return 2
         input_label = str(p)
-        with p.open("r", encoding="utf-8") as fp:
+        # Use utf-8-sig to tolerate UTF-8 BOM from Windows tools (e.g. PowerShell Set-Content).
+        with p.open("r", encoding="utf-8-sig") as fp:
             rows = list(iter_jsonl(fp))
 
     tier_counts: Counter[str] = Counter()

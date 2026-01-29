@@ -1,0 +1,40 @@
+﻿diff --git a/docs/tickets/QUEUE.md b/docs/tickets/QUEUE.md
+index 298bf54..33a18e6 100644
+--- a/docs/tickets/QUEUE.md
++++ b/docs/tickets/QUEUE.md
+@@ -1,10 +1,11 @@
+ # Ticket Queue
+ 
+ ## In Progress
+-- Ticket VS_0003 (`docs/tickets/TICKET_VS_0003_CN_REPO_SNIPER.md`): Add reverse repo (GC001/R-001) monitor (observe+action)
++- Ticket VS_0004 (`docs/tickets/TICKET_VS_0004_PAPER_EVAL_BOM.md`): Fix paper_eval JSONL BOM compatibility (PowerShell UTF8)
+ 
+ ## Backlog
+ 
+ ## Done
++- Ticket VS_0003 (`docs/tickets/TICKET_VS_0003_CN_REPO_SNIPER.md`): Add reverse repo (GC001/R-001) monitor (observe+action)
+ - Ticket VS_0001 (`docs/tickets/TICKET_VS_0001_AUTOPILOT_PIPELINE.md`): Bootstrap industrial autopilot workflow
+ - Ticket VS_0002 (`docs/tickets/TICKET_VS_0002_PAPER_EVAL.md`): Build paper evaluation tool (JSONL → metrics)
+diff --git a/tools/paper_eval.py b/tools/paper_eval.py
+index df2988b..5dd2e48 100644
+--- a/tools/paper_eval.py
++++ b/tools/paper_eval.py
+@@ -25,6 +25,8 @@ from typing import Any, Iterable, TextIO
+ def iter_jsonl(fp: TextIO) -> Iterable[dict[str, Any]]:
+     for line_no, raw in enumerate(fp, 1):
+         s = raw.strip()
++        # PowerShell 5.1 `Set-Content -Encoding UTF8` writes BOM by default; strip it for JSON parsing.
++        s = s.lstrip("\ufeff")
+         if not s:
+             continue
+         try:
+@@ -108,7 +110,8 @@ def main() -> int:
+             print(f"[error] not found: {p}", file=sys.stderr)
+             return 2
+         input_label = str(p)
+-        with p.open("r", encoding="utf-8") as fp:
++        # Use utf-8-sig to tolerate UTF-8 BOM from Windows tools (e.g. PowerShell Set-Content).
++        with p.open("r", encoding="utf-8-sig") as fp:
+             rows = list(iter_jsonl(fp))
+ 
+     tier_counts: Counter[str] = Counter()
