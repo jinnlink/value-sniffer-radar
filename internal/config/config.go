@@ -244,7 +244,7 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
 	if c.Engine.TradeDateMode == "fixed" && c.Engine.FixedTradeDate == "" {
 		return errors.New("engine.fixed_trade_date required when trade_date_mode=fixed")
 	}
-	if os.Getenv(c.Tushare.TokenEnv) == "" {
+	if c.RequiresTushare() && os.Getenv(c.Tushare.TokenEnv) == "" {
 		return errors.New("missing Tushare token env: " + c.Tushare.TokenEnv)
 	}
 	if len(c.Notifiers) == 0 {
@@ -275,4 +275,22 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
 		}
 	}
 	return nil
+}
+
+func (c *Config) RequiresTushare() bool {
+	// Trade date resolution via trade_cal needs Tushare.
+	if c.Engine.TradeDateMode == "latest_open" {
+		return true
+	}
+	// Signal data needs Tushare for these types.
+	for _, s := range c.Signals {
+		if !s.Enabled {
+			continue
+		}
+		switch s.Type {
+		case "cb_premium", "cb_double_low", "fund_premium", "cn_repo_sniper":
+			return true
+		}
+	}
+	return false
 }

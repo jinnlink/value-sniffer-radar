@@ -20,7 +20,8 @@ marketdata:
       type: "eastmoney_repo"
       base_url: "https://push2.eastmoney.com/api/qt/stock/get"
       fields: "f43,f57,f58,f59"
-      rate_divisor: 1.0
+      # Repo quote often returns e.g. f43=1600 meaning 1.600 (%). Divide by 1000 to convert to pct.
+      rate_divisor: 1000.0
     - name: "tencent"
       type: "tencent_repo"
       quote_url: "https://qt.gtimg.cn/q="

@@ -1,0 +1,110 @@
+﻿diff --git a/configs/config.example.yaml b/configs/config.example.yaml
+index aaa739f..aa94fee 100644
+--- a/configs/config.example.yaml
++++ b/configs/config.example.yaml
+@@ -20,7 +20,8 @@ marketdata:
+       type: "eastmoney_repo"
+       base_url: "https://push2.eastmoney.com/api/qt/stock/get"
+       fields: "f43,f57,f58,f59"
+-      rate_divisor: 1.0
++      # Repo quote often returns e.g. f43=1600 meaning 1.600 (%). Divide by 1000 to convert to pct.
++      rate_divisor: 1000.0
+     - name: "tencent"
+       type: "tencent_repo"
+       quote_url: "https://qt.gtimg.cn/q="
+diff --git a/docs/tickets/QUEUE.md b/docs/tickets/QUEUE.md
+index ffb649d..baf26e0 100644
+--- a/docs/tickets/QUEUE.md
++++ b/docs/tickets/QUEUE.md
+@@ -1,9 +1,10 @@
+ # Ticket Queue
+ 
+ ## In Progress
+-- Ticket VS_0006 (`docs/tickets/TICKET_VS_0006_OPTIMIZER.md`): Add online optimizer (bandit + dynamic polling + auto-threshold suggestions)
++- Ticket VS_0007 (`docs/tickets/TICKET_VS_0007_RUNTIME_TWEAKS.md`): Realtime-only run without Tushare token + repo divisor default
+ 
+ ## Backlog
++- Ticket VS_0006 (`docs/tickets/TICKET_VS_0006_OPTIMIZER.md`): Add online optimizer (bandit + dynamic polling + auto-threshold suggestions)
+ 
+ ## Done
+ - Ticket VS_0005 (`docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md`): Add CN realtime marketdata adapter (multi-source, repo first)
+diff --git a/internal/config/config.go b/internal/config/config.go
+index 92c7139..8411cee 100644
+--- a/internal/config/config.go
++++ b/internal/config/config.go
+@@ -244,7 +244,7 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
+ 	if c.Engine.TradeDateMode == "fixed" && c.Engine.FixedTradeDate == "" {
+ 		return errors.New("engine.fixed_trade_date required when trade_date_mode=fixed")
+ 	}
+-	if os.Getenv(c.Tushare.TokenEnv) == "" {
++	if c.RequiresTushare() && os.Getenv(c.Tushare.TokenEnv) == "" {
+ 		return errors.New("missing Tushare token env: " + c.Tushare.TokenEnv)
+ 	}
+ 	if len(c.Notifiers) == 0 {
+@@ -276,3 +276,21 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
+ 	}
+ 	return nil
+ }
++
++func (c *Config) RequiresTushare() bool {
++	// Trade date resolution via trade_cal needs Tushare.
++	if c.Engine.TradeDateMode == "latest_open" {
++		return true
++	}
++	// Signal data needs Tushare for these types.
++	for _, s := range c.Signals {
++		if !s.Enabled {
++			continue
++		}
++		switch s.Type {
++		case "cb_premium", "cb_double_low", "fund_premium", "cn_repo_sniper":
++			return true
++		}
++	}
++	return false
++}
+diff --git a/internal/engine/engine.go b/internal/engine/engine.go
+index b5d11d1..f207752 100644
+--- a/internal/engine/engine.go
++++ b/internal/engine/engine.go
+@@ -30,18 +30,20 @@ type Engine struct {
+ }
+ 
+ func New(cfg *config.Config) (*Engine, error) {
+-	token, ok := os.LookupEnv(cfg.Tushare.TokenEnv)
+-	if !ok || strings.TrimSpace(token) == "" {
+-		return nil, fmt.Errorf("missing Tushare token env: %s", cfg.Tushare.TokenEnv)
++	var client *tushare.Client
++	if cfg.RequiresTushare() {
++		token, ok := os.LookupEnv(cfg.Tushare.TokenEnv)
++		if !ok || strings.TrimSpace(token) == "" {
++			return nil, fmt.Errorf("missing Tushare token env: %s", cfg.Tushare.TokenEnv)
++		}
++		client = tushare.New(tushare.Options{
++			BaseURL:        cfg.Tushare.BaseURL,
++			Token:          token,
++			TimeoutSeconds: cfg.Tushare.TimeoutSeconds,
++			MaxRetries:     cfg.Engine.MaxAPIRetries,
++		})
+ 	}
+ 
+-	client := tushare.New(tushare.Options{
+-		BaseURL:        cfg.Tushare.BaseURL,
+-		Token:          token,
+-		TimeoutSeconds: cfg.Tushare.TimeoutSeconds,
+-		MaxRetries:     cfg.Engine.MaxAPIRetries,
+-	})
+-
+ 	notifs, err := notifier.BuildAll(cfg.Notifiers)
+ 	if err != nil {
+ 		return nil, err
+@@ -150,6 +152,9 @@ func (e *Engine) resolveTradeDate(ctx context.Context) (string, error) {
+ 	case "fixed":
+ 		return e.cfg.Engine.FixedTradeDate, nil
+ 	case "latest_open":
++		if e.client == nil {
++			return "", fmt.Errorf("trade_date_mode=latest_open requires Tushare client (set %s)", e.cfg.Tushare.TokenEnv)
++		}
+ 		return e.client.LatestOpenTradeDate(ctx, 45)
+ 	default:
+ 		return "", fmt.Errorf("unknown trade_date_mode: %s", e.cfg.Engine.TradeDateMode)

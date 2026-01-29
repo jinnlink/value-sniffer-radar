@@ -1,9 +1,10 @@
 # Ticket Queue
 
 ## In Progress
-- Ticket VS_0006 (`docs/tickets/TICKET_VS_0006_OPTIMIZER.md`): Add online optimizer (bandit + dynamic polling + auto-threshold suggestions)
+- Ticket VS_0007 (`docs/tickets/TICKET_VS_0007_RUNTIME_TWEAKS.md`): Realtime-only run without Tushare token + repo divisor default
 
 ## Backlog
+- Ticket VS_0006 (`docs/tickets/TICKET_VS_0006_OPTIMIZER.md`): Add online optimizer (bandit + dynamic polling + auto-threshold suggestions)
 
 ## Done
 - Ticket VS_0005 (`docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md`): Add CN realtime marketdata adapter (multi-source, repo first)

@@ -30,17 +30,19 @@ type Engine struct {
 }
 
 func New(cfg *config.Config) (*Engine, error) {
-	token, ok := os.LookupEnv(cfg.Tushare.TokenEnv)
-	if !ok || strings.TrimSpace(token) == "" {
-		return nil, fmt.Errorf("missing Tushare token env: %s", cfg.Tushare.TokenEnv)
+	var client *tushare.Client
+	if cfg.RequiresTushare() {
+		token, ok := os.LookupEnv(cfg.Tushare.TokenEnv)
+		if !ok || strings.TrimSpace(token) == "" {
+			return nil, fmt.Errorf("missing Tushare token env: %s", cfg.Tushare.TokenEnv)
+		}
+		client = tushare.New(tushare.Options{
+			BaseURL:        cfg.Tushare.BaseURL,
+			Token:          token,
+			TimeoutSeconds: cfg.Tushare.TimeoutSeconds,
+			MaxRetries:     cfg.Engine.MaxAPIRetries,
+		})
 	}
-
-	client := tushare.New(tushare.Options{
-		BaseURL:        cfg.Tushare.BaseURL,
-		Token:          token,
-		TimeoutSeconds: cfg.Tushare.TimeoutSeconds,
-		MaxRetries:     cfg.Engine.MaxAPIRetries,
-	})
 
 	notifs, err := notifier.BuildAll(cfg.Notifiers)
 	if err != nil {
@@ -150,6 +152,9 @@ func (e *Engine) resolveTradeDate(ctx context.Context) (string, error) {
 	case "fixed":
 		return e.cfg.Engine.FixedTradeDate, nil
 	case "latest_open":
+		if e.client == nil {
+			return "", fmt.Errorf("trade_date_mode=latest_open requires Tushare client (set %s)", e.cfg.Tushare.TokenEnv)
+		}
 		return e.client.LatestOpenTradeDate(ctx, 45)
 	default:
 		return "", fmt.Errorf("unknown trade_date_mode: %s", e.cfg.Engine.TradeDateMode)
