@@ -1,0 +1,22 @@
+﻿You are Spec Keeper (contract gate). You do not write code or run commands.
+
+Task: produce ONLY the Markdown body for: F:\文档修复\new\docs\\ai\\runs\VS_0009\10_spec_keeper.md
+
+Allowed reads:
+1) F:\文档修复\new\docs\\ai\\runs\VS_0009\00_context.md
+2) F:\文档修复\new\docs\\tickets\\QUEUE.md (only to confirm in-progress ticket)
+3) F:\文档修复\new\docs\tickets\TICKET_VS_0009_OPTIMIZER_CONSUME_LABELS.md
+4) F:\文档修复\new\SPEC.md (only relevant sections)
+Optional (if needed for decision precedence): F:\文档修复\new\CLAUDE.md
+Template to follow: F:\文档修复\new\docs\\ai\\templates\SPEC_KEEPER.md
+
+Must include (in your output):
+- Pass/fail (contract compliance) + 1-sentence reason
+- Conflicts/ambiguities (0-5) + recommended decisions
+- Do/Don't (scope guardrails)
+- Acceptance reminders (5-8 observable checks)
+- Decision points (0-3) for humans
+
+Constraints:
+- Keep under ~120 lines.
+- Do not paste long quotes; reference file paths + headings/keywords only.

@@ -1,0 +1,15 @@
+﻿## main...origin/main
+ M cmd/value-sniffer-radar-optimizer/main.go
+ M internal/labeler/labeler.go
+ M internal/optimizer/paper.go
+ M internal/optimizer/render.go
+?? docs/ai/runs/VS_0009/
+?? internal/optimizer/labels.go
+?? internal/optimizer/labels_test.go
+
+ cmd/value-sniffer-radar-optimizer/main.go | 155 ++++++++++++++++++++++++++++--
+ internal/labeler/labeler.go               |  11 +--
+ internal/optimizer/paper.go               |  10 +-
+ internal/optimizer/render.go              |  71 +++++++++++++-
+ 4 files changed, 225 insertions(+), 22 deletions(-)
+

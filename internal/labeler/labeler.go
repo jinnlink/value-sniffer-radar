@@ -3,8 +3,6 @@ package labeler
 import (
 	"bufio"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -195,7 +193,7 @@ func (r *Runner) RunOnce(ctx context.Context, paperPath string, labelsPath strin
 
 		for _, w := range r.labelCfg.Windows {
 			windowSec := int(w.Seconds())
-			key := eventID(pr) + "|" + strconv.Itoa(windowSec)
+			key := optimizer.EventID(pr) + "|" + strconv.Itoa(windowSec)
 			if labeled[key] {
 				continue
 			}
@@ -228,7 +226,7 @@ func (r *Runner) RunOnce(ctx context.Context, paperPath string, labelsPath strin
 			}
 
 			l := Label{
-				EventID:      eventID(pr),
+				EventID:      optimizer.EventID(pr),
 				EventTS:      eventTS,
 				Source:       ev.Source,
 				Symbol:       ev.Symbol,
@@ -302,9 +300,4 @@ func toFloat(v any) (float64, bool) {
 	default:
 		return 0, false
 	}
-}
-
-func eventID(pr optimizer.PaperRow) string {
-	h := sha256.Sum256([]byte(pr.TS + "|" + pr.Event.Source + "|" + pr.Event.Symbol + "|" + pr.Event.TradeDate + "|" + pr.Event.Title))
-	return hex.EncodeToString(h[:])
 }

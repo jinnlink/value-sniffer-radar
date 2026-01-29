@@ -2,6 +2,8 @@ package optimizer
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,8 +11,8 @@ import (
 )
 
 type PaperRow struct {
-	TS    string         `json:"ts"`
-	Event PaperLogEvent  `json:"event"`
+	TS    string        `json:"ts"`
+	Event PaperLogEvent `json:"event"`
 }
 
 type PaperLogEvent struct {
@@ -95,3 +97,7 @@ func RewardFromRow(pr PaperRow) (int, bool) {
 	}
 }
 
+func EventID(pr PaperRow) string {
+	h := sha256.Sum256([]byte(pr.TS + "|" + pr.Event.Source + "|" + pr.Event.Symbol + "|" + pr.Event.TradeDate + "|" + pr.Event.Title))
+	return hex.EncodeToString(h[:])
+}
