@@ -1,7 +1,7 @@
 # Ticket Queue
 
 ## In Progress
-- Ticket VS_0005 (`docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md`): Add CN realtime marketdata adapter (repo first)
+- Ticket VS_0005 (`docs/tickets/TICKET_VS_0005_CN_REALTIME_MARKETDATA.md`): Add CN realtime marketdata adapter (multi-source, repo first)
 
 ## Backlog
 
