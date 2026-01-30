@@ -27,6 +27,7 @@ type Engine struct {
 	symbolLast map[string]time.Time
 	lastEval   map[string]time.Time
 	dailySent  map[string]int
+	recoQuotas map[string]int // optional overrides (signal -> daily action quota)
 }
 
 func New(cfg *config.Config) (*Engine, error) {
@@ -69,11 +70,14 @@ func New(cfg *config.Config) (*Engine, error) {
 		symbolLast: map[string]time.Time{},
 		lastEval:   map[string]time.Time{},
 		dailySent:  map[string]int{},
+		recoQuotas: nil,
 	}, nil
 }
 
 func (e *Engine) Run() error {
 	ctx := context.Background()
+
+	e.loadRecoIfConfigured()
 
 	ticker := time.NewTicker(time.Duration(e.cfg.Engine.IntervalSeconds) * time.Second)
 	defer ticker.Stop()
@@ -303,6 +307,9 @@ func (e *Engine) applyDailyCaps(events []notifier.Event, tradeDate string) ([]no
 	actionCap := e.cfg.Engine.ActionMaxEventsPerDay
 	observeCap := e.cfg.Engine.ObserveMaxEventsPerDay
 	perSignal := e.cfg.Engine.ActionMaxEventsPerSignalPerDay
+	if e.recoQuotas != nil && len(e.recoQuotas) > 0 {
+		perSignal = e.recoQuotas
+	}
 
 	out := make([]notifier.Event, 0, len(events))
 	droppedA := 0

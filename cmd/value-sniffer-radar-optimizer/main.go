@@ -17,6 +17,7 @@ func main() {
 	var labelsPath string
 	var labelWindowSec int
 	var outMD string
+	var outReco string
 	var seed int64
 	var slots int
 
@@ -24,6 +25,7 @@ func main() {
 	flag.StringVar(&labelsPath, "labels", "", "Optional labels.repo.jsonl path (append-only).")
 	flag.IntVar(&labelWindowSec, "label-window-sec", 0, "Which labels window (sec) to use for bandit updates. 0=auto.")
 	flag.StringVar(&outMD, "out-md", "", "Optional Markdown output path.")
+	flag.StringVar(&outReco, "out-reco", "", "Optional reco JSON path (e.g. .\\state\\optimizer.reco.json).")
 	flag.Int64Var(&seed, "seed", 7, "RNG seed for deterministic suggestions.")
 	flag.IntVar(&slots, "slots", 10, "How many action slots to suggest.")
 	flag.Parse()
@@ -201,6 +203,7 @@ func main() {
 
 	rng := rand.New(rand.NewSource(seed))
 	alloc, _ := b.SuggestAllocation(rng, slots)
+	quotaReco := optimizer.SuggestQuotas(rand.New(rand.NewSource(seed)), b, slots)
 	rep := optimizer.Report{
 		GeneratedAt:       time.Now(),
 		InputPath:         label,
@@ -225,6 +228,11 @@ func main() {
 		if err := os.MkdirAll(filepath.Dir(outMD), 0o755); err == nil {
 			_ = os.WriteFile(outMD, []byte(md), 0o644)
 		}
+	}
+
+	if outReco != "" {
+		reco := optimizer.BuildRecommendation(time.Now(), label, labelsPath, primaryWindowSec, slots, quotaReco, b)
+		_ = optimizer.WriteReco(outReco, reco)
 	}
 
 	_ = withReward

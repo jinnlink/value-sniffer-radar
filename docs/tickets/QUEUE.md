@@ -1,10 +1,9 @@
 # Ticket Queue
 
 ## In Progress
-(none)
+- Ticket VS_0011 (`docs/tickets/TICKET_VS_0011_OPTIMIZER_TO_QUOTAS.md`): Use optimizer results to drive per-signal quotas + runtime scheduling
 
 ## Backlog
-- Ticket VS_0011 (`docs/tickets/TICKET_VS_0011_OPTIMIZER_TO_QUOTAS.md`): Use optimizer results to drive per-signal quotas + runtime scheduling
 
 ## Done
 - Ticket VS_0010 (`docs/tickets/TICKET_VS_0010_ACTION_BUDGET_POLICY.md`): Action budget + quality gate (target ~30 action/day)

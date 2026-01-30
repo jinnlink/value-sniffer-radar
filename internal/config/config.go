@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -55,6 +56,9 @@ type EngineConfig struct {
 	//   action_max_events_per_signal_per_day:
 	//     cn_repo_sniper_action: 10
 	ActionMaxEventsPerSignalPerDay map[string]int `yaml:"action_max_events_per_signal_per_day"`
+
+	// Optional: load optimizer recommendations and override per-signal quotas at runtime.
+	RecoPath string `yaml:"reco_path"`
 }
 
 type MarketdataConfig struct {
@@ -235,6 +239,13 @@ func (c *Config) normalizeAndValidate(baseDir string) error {
 		if k == "" {
 			delete(c.Engine.ActionMaxEventsPerSignalPerDay, k)
 		}
+	}
+	if strings.TrimSpace(c.Engine.RecoPath) != "" {
+		p := strings.TrimSpace(c.Engine.RecoPath)
+		if !filepath.IsAbs(p) {
+			p = filepath.Join(baseDir, p)
+		}
+		c.Engine.RecoPath = p
 	}
 
 	// marketdata defaults (optional)

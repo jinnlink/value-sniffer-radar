@@ -109,5 +109,6 @@ func RenderMarkdown(r Report) string {
 	b.WriteString("## Notes\n")
 	b.WriteString("- This tool consumes `paper_log` JSONL.\n")
 	b.WriteString("- If `-labels` is provided, it prefers `labels.repo.jsonl` rewards (per `labels_primary_window_sec`) and falls back to `event.data.reward` when missing.\n")
+	b.WriteString("- Use `-out-reco` to emit a machine-readable daily quota suggestion file for runtime consumption.\n")
 	return b.String()
 }

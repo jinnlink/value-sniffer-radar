@@ -49,6 +49,8 @@ engine:
   # Per-signal daily action quotas (optional; 0 means unlimited)
   action_max_events_per_signal_per_day:
     cn_repo_sniper_action: 10
+  # Optional: load optimizer recommendations and override per-signal quotas at runtime
+  reco_path: ""
 
 notifiers:
   - type: "stdout"

@@ -1,0 +1,22 @@
+﻿## main...origin/main
+ M cmd/value-sniffer-radar-optimizer/main.go
+ M configs/config.example.yaml
+ M docs/tickets/QUEUE.md
+ M internal/config/config.go
+ M internal/engine/engine.go
+ M internal/optimizer/render.go
+?? docs/ai/runs/VS_0011/
+?? internal/engine/reco_loader.go
+?? internal/engine/reco_loader_test.go
+?? internal/optimizer/reco.go
+?? internal/optimizer/reco_test.go
+?? internal/reco/
+
+ cmd/value-sniffer-radar-optimizer/main.go |  8 ++++++++
+ configs/config.example.yaml               |  2 ++
+ docs/tickets/QUEUE.md                     |  3 +--
+ internal/config/config.go                 | 11 +++++++++++
+ internal/engine/engine.go                 |  7 +++++++
+ internal/optimizer/render.go              |  1 +
+ 6 files changed, 30 insertions(+), 2 deletions(-)
+
