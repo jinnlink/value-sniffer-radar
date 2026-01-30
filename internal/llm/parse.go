@@ -18,7 +18,12 @@ func ParseEnrichment(s string) (Enrichment, error) {
 		return e, fmt.Errorf("empty output")
 	}
 	if err := json.Unmarshal([]byte(s), &e); err != nil {
-		return e, err
+		// Many CLIs may print extra text. Best-effort: scan for a JSON object and decode it.
+		if ee, ok := tryDecodeFirstJSONObject(s); ok {
+			e = ee
+		} else {
+			return e, err
+		}
 	}
 	e.Summary = strings.TrimSpace(e.Summary)
 	if e.Summary == "" {
@@ -28,6 +33,21 @@ func ParseEnrichment(s string) (Enrichment, error) {
 	e.Risks = compact(e.Risks)
 	e.Checklist = compact(e.Checklist)
 	return e, nil
+}
+
+func tryDecodeFirstJSONObject(s string) (Enrichment, bool) {
+	var e Enrichment
+	for i := 0; i < len(s); i++ {
+		if s[i] != '{' {
+			continue
+		}
+		dec := json.NewDecoder(strings.NewReader(s[i:]))
+		if err := dec.Decode(&e); err != nil {
+			continue
+		}
+		return e, true
+	}
+	return Enrichment{}, false
 }
 
 func compact(in []string) []string {

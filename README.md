@@ -100,7 +100,19 @@ VS_0013 提供 `cmd/value-sniffer-radar-llm`：只做“解释/摘要/清单”�
 
 要求：你的 CLI 必须从 stdin 读 prompt，并在 stdout 输出严格 JSON（enrich 模式）。
 
-示例（用 `codex`/`gemini` 之类 CLI 时，你需要自己填对应命令参数）：
+推荐（最稳）：用 `codex exec --output-schema` 包装成“stdin→stdout 纯 JSON”：
+
+```powershell
+go run .\cmd\value-sniffer-radar-llm `
+  -mode enrich `
+  -provider cli `
+  -cli-cmd powershell.exe `
+  -cli-args "-NoProfile -ExecutionPolicy Bypass -File tools\\llm_wrappers\\codex_enrich.ps1" `
+  -in .\state\paper.jsonl `
+  -out .\state\llm.enriched.jsonl
+```
+
+你也可以用 `gemini` / `claude` / `opencode`，但它们不一定能稳定做到“stdout 只输出 JSON”。如果输出里混了额外文本，`value-sniffer-radar-llm` 会尝试从中提取第一个 JSON 对象解析。
 
 ```powershell
 go run .\cmd\value-sniffer-radar-llm `
