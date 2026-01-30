@@ -80,3 +80,14 @@ go run .\cmd\value-sniffer-radar-optimizer -in .\state\paper.jsonl -labels .\sta
 
 下一步（VS_0011 Backlog）：把 optimizer 的结果自动写回“按信号配额/调度策略”，减少手工调参。
 
+## 一键日常闭环（推荐）
+
+VS_0012 提供 `tools/daily_loop.ps1`，把日常操作收敛成一个命令：label → report → reco。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\daily_loop.ps1 -Config .\config.yaml
+```
+
+将 reco 接入运行时（VS_0011）：
+- 在 `config.yaml` 配置：`engine.reco_path: .\state\optimizer.reco.json`
+- 重启 radar 进程后生效（目前是启动时加载一次）。
