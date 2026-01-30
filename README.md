@@ -1,6 +1,6 @@
 # Value Sniffer Radar（只报警的机会嗅探雷达）
 
-目标：在你能参与的合规市场里，把“极端偏离 / 错价 / 异常状态”尽快报警出来；**不自动交易**，不承诺收益。
+目标：合规市场里，把“极端偏离 / 错价 / 异常状态”尽快报警出来；**不自动交易**，不承诺收益。
 
 ## 特点
 
@@ -91,3 +91,36 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\daily_loop.ps1 -Conf
 将 reco 接入运行时（VS_0011）：
 - 在 `config.yaml` 配置：`engine.reco_path: .\state\optimizer.reco.json`
 - 重启 radar 进程后生效（目前是启动时加载一次）。
+
+## LLM 事件增强（可选，不在热路径）
+
+VS_0013 提供 `cmd/value-sniffer-radar-llm`：只做“解释/摘要/清单”，不改 `tier`，不做任何交易决策。
+
+### 用 CLI 执行（推荐先用这个跑通）
+
+要求：你的 CLI 必须从 stdin 读 prompt，并在 stdout 输出严格 JSON（enrich 模式）。
+
+示例（用 `codex`/`gemini` 之类 CLI 时，你需要自己填对应命令参数）：
+
+```powershell
+go run .\cmd\value-sniffer-radar-llm `
+  -mode enrich `
+  -provider cli `
+  -cli-cmd gemini.cmd `
+  -cli-args "" `
+  -in .\state\paper.jsonl `
+  -out .\state\llm.enriched.jsonl
+```
+
+### 用云端 API（OpenAI-compatible Chat Completions）
+
+```powershell
+$env:LLM_API_KEY="YOUR_KEY"
+go run .\cmd\value-sniffer-radar-llm `
+  -mode enrich `
+  -provider api `
+  -api-base-url "https://api.openai.com/v1" `
+  -api-model "gpt-4o-mini" `
+  -in .\state\paper.jsonl `
+  -out .\state\llm.enriched.jsonl
+```

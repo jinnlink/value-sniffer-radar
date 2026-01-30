@@ -1,0 +1,12 @@
+﻿## main...origin/main
+ M README.md
+ M docs/tickets/QUEUE.md
+?? cmd/value-sniffer-radar-llm/
+?? docs/ai/runs/VS_0013/
+?? docs/tickets/TICKET_VS_0013_LLM_ENRICHER.md
+?? internal/llm/
+
+ README.md             | 35 ++++++++++++++++++++++++++++++++++-
+ docs/tickets/QUEUE.md |  3 ++-
+ 2 files changed, 36 insertions(+), 2 deletions(-)
+

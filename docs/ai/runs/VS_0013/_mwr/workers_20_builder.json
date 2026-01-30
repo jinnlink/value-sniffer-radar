@@ -1,0 +1,7 @@
+﻿{
+    "name":  "VS_0013_builder",
+    "command":  "Set-Location \u0027F:\\文档修复\\new\u0027; powershell -NoProfile -ExecutionPolicy Bypass -File \u0027C:\\Users\\Administrator\\.codex\\skills\\codex-cli-bridge\\scripts\\run_codex.ps1\u0027 -PromptFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0013\\_mwr\\20_builder_prompt.txt\u0027 -OutFile \u0027F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0013\\20_builder.md\u0027",
+    "promptFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0013\\_mwr\\20_builder_prompt.txt",
+    "outFile":  "F:\\文档修复\\new\\docs\\\\ai\\\\runs\\VS_0013\\20_builder.md",
+    "tty":  true
+}

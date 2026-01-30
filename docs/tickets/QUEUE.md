@@ -1,11 +1,12 @@
 # Ticket Queue
 
 ## In Progress
-- Ticket VS_0012 (`docs/tickets/TICKET_VS_0012_DAILY_LOOP_SCRIPT.md`): One-command daily loop (labeler→optimizer→reco) + report
+- Ticket VS_0013 (`docs/tickets/TICKET_VS_0013_LLM_ENRICHER.md`): LLM sidecar (API+CLI) to enrich/digest events
 
 ## Backlog
 
 ## Done
+- Ticket VS_0012 (`docs/tickets/TICKET_VS_0012_DAILY_LOOP_SCRIPT.md`): One-command daily loop (labeler→optimizer→reco) + report
 - Ticket VS_0011 (`docs/tickets/TICKET_VS_0011_OPTIMIZER_TO_QUOTAS.md`): Use optimizer results to drive per-signal quotas + runtime scheduling
 - Ticket VS_0010 (`docs/tickets/TICKET_VS_0010_ACTION_BUDGET_POLICY.md`): Action budget + quality gate (target ~30 action/day)
 - Ticket VS_0009 (`docs/tickets/TICKET_VS_0009_OPTIMIZER_CONSUME_LABELS.md`): Optimizer consumes labels.repo.jsonl
